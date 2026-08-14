@@ -6,12 +6,6 @@ on:
   pull_request:
     branches: ["main"]
 
-env:
-  # Postgres service credentials (used by both the service container and the app)
-  POSTGRES_DB: redscroller_test
-  POSTGRES_USER: postgres
-  POSTGRES_PASSWORD: postgres_ci_password
-
 jobs:
   # ──────────────────────────────────────────────────────────────────────────
   # Job 1: Backend e2e tests (access-control / cross-tenant RLS isolation)
@@ -21,12 +15,14 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
+      # NOTE: env context is NOT available inside the services block —
+      # credentials must be hard-coded literals here.
       postgres:
         image: postgres:16
         env:
-          POSTGRES_DB: ${{ env.POSTGRES_DB }}
-          POSTGRES_USER: ${{ env.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: redscroller_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres_ci_pw
         ports:
           - 5432:5432
         options: >-
@@ -36,13 +32,12 @@ jobs:
           --health-retries 5
 
     env:
-      # Direct connection for migrations (no PgBouncer)
-      DATABASE_URL: postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
-      DIRECT_URL: postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
-      # Stub values for non-database env vars consumed by NestJS modules
-      RESEND_API_KEY: re_stub_key_for_ci
-      RESEND_FROM_EMAIL: ci@example.com
-      CLERK_SECRET_KEY: sk_test_stub_for_ci
+      DATABASE_URL: "postgresql://postgres:postgres_ci_pw@localhost:5432/redscroller_test"
+      DIRECT_URL: "postgresql://postgres:postgres_ci_pw@localhost:5432/redscroller_test"
+      # Stub values for NestJS modules that consume these at startup
+      RESEND_API_KEY: "re_stub_key_for_ci"
+      RESEND_FROM_EMAIL: "ci@example.com"
+      CLERK_SECRET_KEY: "sk_test_stub_for_ci"
 
     steps:
       - name: Checkout repository
@@ -61,22 +56,22 @@ jobs:
         working-directory: packages/database
         run: npx prisma generate
 
-      - name: Push database schema (create all tables)
+      - name: Push database schema (create all tables on fresh DB)
         working-directory: packages/database
         run: npx prisma db push --force-reset --accept-data-loss
         env:
-          DATABASE_URL: postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
+          DATABASE_URL: "postgresql://postgres:postgres_ci_pw@localhost:5432/redscroller_test"
 
       - name: Apply RLS policies migration
         run: |
-          psql postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }} \
+          psql "postgresql://postgres:postgres_ci_pw@localhost:5432/redscroller_test" \
             -f packages/database/prisma/migrations/add_rls_policies/migration.sql
 
       - name: Run backend unit tests
         working-directory: apps/api
         run: npm test -- --passWithNoTests
 
-      - name: Run backend e2e tests (including access-control / cross-tenant isolation)
+      - name: Run backend e2e tests (including access-control / cross-tenant RLS isolation)
         working-directory: apps/api
         run: npm run test:e2e
 
@@ -88,9 +83,9 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      # Stub Clerk publishable key — Next.js needs this at type-gen time
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_stub_for_ci
-      CLERK_SECRET_KEY: sk_test_stub_for_ci
+      # Stub Clerk keys — Next.js needs these at type-gen/build time
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_stub_for_ci"
+      CLERK_SECRET_KEY: "sk_test_stub_for_ci"
 
     steps:
       - name: Checkout repository
