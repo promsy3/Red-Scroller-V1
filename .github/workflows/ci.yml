@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+env:
+  # Postgres service credentials (used by both the service container and the app)
+  POSTGRES_DB: redscroller_test
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres_ci_password
+
+jobs:
+  # ──────────────────────────────────────────────────────────────────────────
+  # Job 1: Backend e2e tests (access-control / cross-tenant RLS isolation)
+  # ──────────────────────────────────────────────────────────────────────────
+  backend-e2e:
+    name: "Backend – E2E & Access-Control Tests"
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # Direct connection for migrations (no PgBouncer)
+      DATABASE_URL: postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
+      DIRECT_URL: postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
+      # Stub values for non-database env vars consumed by NestJS modules
+      RESEND_API_KEY: re_stub_key_for_ci
+      RESEND_FROM_EMAIL: ci@example.com
+      CLERK_SECRET_KEY: sk_test_stub_for_ci
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        working-directory: packages/database
+        run: npx prisma generate
+
+      - name: Push database schema (create all tables)
+        working-directory: packages/database
+        run: npx prisma db push --force-reset --accept-data-loss
+        env:
+          DATABASE_URL: postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
+
+      - name: Apply RLS policies migration
+        run: |
+          psql postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }} \
+            -f packages/database/prisma/migrations/add_rls_policies/migration.sql
+
+      - name: Run backend unit tests
+        working-directory: apps/api
+        run: npm test -- --passWithNoTests
+
+      - name: Run backend e2e tests (including access-control / cross-tenant isolation)
+        working-directory: apps/api
+        run: npm run test:e2e
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Job 2: Frontend type-check (Next.js / TypeScript)
+  # ──────────────────────────────────────────────────────────────────────────
+  frontend-typecheck:
+    name: "Frontend – TypeScript Type-Check"
+    runs-on: ubuntu-latest
+
+    env:
+      # Stub Clerk publishable key — Next.js needs this at type-gen time
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_stub_for_ci
+      CLERK_SECRET_KEY: sk_test_stub_for_ci
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run frontend type-check
+        working-directory: apps/web
+        run: npx tsc --noEmit
