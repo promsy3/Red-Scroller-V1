@@ -74,6 +74,6 @@ describe('DiaryController', () => {
       where: { id: 'event-1' },
       data: expect.objectContaining({ title: 'Moved court hearing', date: new Date('2026-09-01T10:00:00.000Z') }),
     }));
-    expect(audit.log).toHaveBeenCalledWith('firm-1', 'user-1', 'UPDATE', 'MATTER', 'event-1', expect.any(Object));
+    expect(audit.log).toHaveBeenCalledWith('firm-1', 'user-1', 'UPDATE', 'DIARY_EVENT', 'event-1', expect.any(Object));
   });
 });

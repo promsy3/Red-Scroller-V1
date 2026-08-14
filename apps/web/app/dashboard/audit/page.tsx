@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 type AuditLog = {
   id: string
   createdAt: string
-  actor?: { email?: string }
+  actor?: { name?: string; email?: string }
   action: string
   entityType: string
   details?: unknown
