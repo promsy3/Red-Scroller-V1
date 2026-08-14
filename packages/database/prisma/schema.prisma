@@ -1,0 +1,226 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum FirmStatus {
+  active
+  suspended
+}
+
+enum UserRole {
+  admin
+  lawyer
+  paralegal
+}
+
+enum UserStatus {
+  pending
+  active
+  removed
+}
+
+enum RequestStatus {
+  pending
+  approved
+  rejected
+}
+
+enum MatterStatus {
+  active
+  pending
+  closed
+}
+
+enum DiaryEventType {
+  meeting
+  court_date
+  filing_deadline
+}
+
+enum ClientType {
+  corporate
+  individual
+}
+
+enum VerificationStatus {
+  pending
+  verified
+  rejected
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  VIEW
+  OVERRIDE
+}
+
+enum AuditEntityType {
+  MATTER
+  CLIENT
+  DOCUMENT
+  FIRM
+  USER
+  DIARY_EVENT
+}
+
+model Firm {
+  id        String     @id @default(uuid()) @db.Uuid
+  name      String
+  status    FirmStatus @default(active)
+  createdAt DateTime   @default(now())
+
+  users         User[]
+  joinRequests  FirmJoinRequest[]
+  invites       FirmInvite[]
+  clients       Client[]
+  matters       Matter[]
+  documents     Document[]
+  auditLogs     AuditLog[]
+  diaryEvents   DiaryEvent[]
+}
+
+model User {
+  // Internal UUID remains stable across authentication-provider migrations.
+  id        String     @id @db.Uuid
+  clerkId   String?    @unique
+  firmId    String?    @db.Uuid
+  email     String     @unique
+  name      String?
+  role      UserRole   @default(lawyer)
+  status    UserStatus @default(pending)
+  createdAt DateTime   @default(now())
+  removedAt DateTime?
+
+  firm              Firm?             @relation(fields: [firmId], references: [id])
+  joinRequests      FirmJoinRequest[]
+  invites           FirmInvite[]
+  assignedMatters   Matter[]          @relation("MatterAssignee")
+  uploadedDocuments Document[]        @relation("DocumentUploader")
+  matterAccess      MatterAccess[]
+  auditLogs         AuditLog[]
+}
+
+model FirmJoinRequest {
+  id        String        @id @default(uuid()) @db.Uuid
+  userId    String        @db.Uuid
+  firmId    String        @db.Uuid
+  status    RequestStatus @default(pending)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  user      User          @relation(fields: [userId], references: [id])
+  firm      Firm          @relation(fields: [firmId], references: [id])
+}
+
+model FirmInvite {
+  id        String   @id @default(uuid()) @db.Uuid
+  firmId    String   @db.Uuid
+  token     String   @unique
+  createdBy String   @db.Uuid
+  expiresAt DateTime
+  maxUses   Int?
+  useCount  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  firm      Firm     @relation(fields: [firmId], references: [id])
+  creator   User     @relation(fields: [createdBy], references: [id])
+}
+
+model Client {
+  id                String            @id @default(uuid()) @db.Uuid
+  firmId            String            @db.Uuid
+  type              ClientType
+  name              String
+  verificationStatus VerificationStatus @default(pending)
+  createdAt         DateTime          @default(now())
+
+  firm              Firm              @relation(fields: [firmId], references: [id])
+  matters           Matter[]
+}
+
+model Matter {
+  id          String       @id @default(uuid()) @db.Uuid
+  firmId      String       @db.Uuid
+  clientId    String       @db.Uuid
+  title       String
+  description String?
+  status      MatterStatus @default(pending)
+  isRestricted Boolean     @default(false)
+  assignedTo  String?      @db.Uuid
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  firm        Firm         @relation(fields: [firmId], references: [id])
+  client      Client       @relation(fields: [clientId], references: [id])
+  assignee    User?        @relation("MatterAssignee", fields: [assignedTo], references: [id])
+  documents   Document[]
+  matterAccess MatterAccess[]
+  diaryEvents DiaryEvent[]
+}
+
+model Document {
+  id         String   @id @default(uuid()) @db.Uuid
+  matterId   String   @db.Uuid
+  firmId     String   @db.Uuid
+  name       String
+  storageKey String
+  mimeType   String?
+  sizeBytes  Int?
+  uploadedBy String   @db.Uuid
+  createdAt  DateTime @default(now())
+
+  matter     Matter   @relation(fields: [matterId], references: [id])
+  firm       Firm     @relation(fields: [firmId], references: [id])
+  uploader   User     @relation("DocumentUploader", fields: [uploadedBy], references: [id])
+}
+
+model MatterAccess {
+  id        String   @id @default(uuid()) @db.Uuid
+  matterId  String   @db.Uuid
+  userId    String   @db.Uuid
+  createdAt DateTime @default(now())
+
+  matter    Matter   @relation(fields: [matterId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([matterId, userId])
+}
+
+model AuditLog {
+  id         String          @id @default(uuid()) @db.Uuid
+  firmId     String          @db.Uuid
+  actorId    String          @db.Uuid
+  action     AuditAction
+  entityType AuditEntityType
+  entityId   String          @db.Uuid
+  details    Json?
+  createdAt  DateTime        @default(now())
+
+  firm       Firm            @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  actor      User            @relation(fields: [actorId], references: [id], onDelete: Cascade)
+}
+
+model DiaryEvent {
+  id          String        @id @default(uuid()) @db.Uuid
+  firmId      String        @db.Uuid
+  matterId    String?       @db.Uuid
+  type        DiaryEventType
+  title       String
+  description String?
+  date        DateTime
+  reminderSent Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  firm        Firm          @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  matter      Matter?        @relation(fields: [matterId], references: [id], onDelete: Cascade)
+}

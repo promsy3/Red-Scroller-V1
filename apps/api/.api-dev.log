@@ -1,0 +1,112 @@
+
+> api@0.0.1 start:dev
+> nest start --watch
+
+[2J[3J[H[[90m12:01:08[0m] Starting compilation in watch mode...
+
+[[90m12:01:27[0m] Found 0 errors. Watching for file changes.
+
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPrismaModule dependencies initialized[39m[38;5;3m +53ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mFirmsModule dependencies initialized[39m[38;5;3m +4ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mClientsModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mMattersModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mDocumentsModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mDiaryModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAuditModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAppController {/}:[39m[38;5;3m +15ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/, GET} route[39m[38;5;3m +6ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAuthController {/auth}:[39m[38;5;3m +1ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/auth/me, GET} route[39m[38;5;3m +3ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mFirmsController {/firms}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/firms, GET} route[39m[38;5;3m +3ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/firms, POST} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/firms/:id/join, POST} route[39m[38;5;3m +4ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/firms/requests, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/firms/members, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/firms/:id/members/:userId, DELETE} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/firms/requests/:id/approve, POST} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/firms/requests/:id/decline, POST} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mClientsController {/clients}:[39m[38;5;3m +1ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/clients, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/clients/conflicts, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/clients, POST} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/clients/:id, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/clients/:id, PATCH} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mMattersController {/matters}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/matters, GET} route[39m[38;5;3m +3ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/matters, POST} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/matters/:id, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/matters/:id, PATCH} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/matters/:id/access, POST} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/matters/:id/access/:userId, DELETE} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mDocumentsController {/documents}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/documents/presign, POST} route[39m[38;5;3m +2ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/documents/:id/view, POST} route[39m[38;5;3m +2ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/documents, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/documents/:id, PATCH} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/documents/:id, DELETE} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAuditController {/audit}:[39m[38;5;3m +1ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/audit, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/audit/entity, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/audit/export, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mDiaryController {/diary}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/diary, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/diary, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/diary/:id, PATCH} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:31 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/diary/:id, DELETE} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 23520  - [39m06/08/2026, 12:01:32 [32m    LOG[39m [38;5;3m[NestApplication] [39m[32mNest application successfully started[39m[38;5;3m +342ms[39m
+[2J[3J[H[[90m12:39:31[0m] File change detected. Starting incremental compilation...
+
+ERROR: Access denied
+ERROR: Access denied
+node:child_process:1000
+    throw err;
+    ^
+
+Error: Command failed: taskkill /pid 25344 /T /F
+ERROR: Access denied
+
+    at genericNodeError (node:internal/errors:985:15)
+    at wrappedFn (node:internal/errors:539:14)
+    at checkExecSyncError (node:child_process:925:11)
+    at execSync (node:child_process:997:15)
+    at treeKillSync (C:\Users\user\Documents\Red scroller V1\apps\api\node_modules\@nestjs\cli\lib\utils\tree-kill.js:7:38)
+    at C:\Users\user\Documents\Red scroller V1\apps\api\node_modules\@nestjs\cli\actions\start.action.js:92:46
+    at Object.onWatchStatusChange (C:\Users\user\Documents\Red scroller V1\apps\api\node_modules\@nestjs\cli\lib\compiler\watch-compiler.js:82:17)
+    at C:\Users\user\Documents\Red scroller V1\apps\api\node_modules\typescript\lib\typescript.js:133916:30
+    at emitFilesAndReportErrors (C:\Users\user\Documents\Red scroller V1\apps\api\node_modules\typescript\lib\typescript.js:133737:5)
+    at result.afterProgramCreate (C:\Users\user\Documents\Red scroller V1\apps\api\node_modules\typescript\lib\typescript.js:133912:5) {
+  status: 1,
+  signal: null,
+  output: [
+    null,
+    Buffer(0) [Uint8Array] [],
+    Buffer(23) [Uint8Array] [
+       69,  82,  82,  79,  82,  58, 32,
+       65,  99,  99, 101, 115, 115, 32,
+      100, 101, 110, 105, 101, 100, 13,
+       13,  10
+    ]
+  ],
+  pid: 30392,
+  stdout: Buffer(0) [Uint8Array] [],
+  stderr: Buffer(23) [Uint8Array] [
+     69,  82,  82,  79,  82,  58, 32,
+     65,  99,  99, 101, 115, 115, 32,
+    100, 101, 110, 105, 101, 100, 13,
+     13,  10
+  ]
+}
+
+Node.js v24.14.1
+npm error Lifecycle script `start:dev` failed with error:
+npm error code 1
+npm error path C:\Users\user\Documents\Red scroller V1\apps\api
+npm error workspace api@0.0.1
+npm error location C:\Users\user\Documents\Red scroller V1\apps\api
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c nest start --watch
+
+C:\Users\user\Documents\Red scroller V1\apps\api>

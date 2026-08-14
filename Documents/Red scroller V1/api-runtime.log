@@ -1,0 +1,52 @@
+[Nest] 11512  - 10/08/2026, 21:52:32     LOG [NestFactory] Starting Nest application...
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [InstanceLoader] PrismaModule dependencies initialized +176ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [InstanceLoader] AuthModule dependencies initialized +7ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [InstanceLoader] FirmsModule dependencies initialized +20ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [InstanceLoader] ClientsModule dependencies initialized +6ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [InstanceLoader] MattersModule dependencies initialized +3ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [InstanceLoader] DocumentsModule dependencies initialized +2ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [InstanceLoader] DiaryModule dependencies initialized +1ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [InstanceLoader] AppModule dependencies initialized +1ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [InstanceLoader] AuditModule dependencies initialized +1ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RoutesResolver] AppController {/}: +24ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/, GET} route +12ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RoutesResolver] AuthController {/auth}: +4ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/auth/me, GET} route +2ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RoutesResolver] FirmsController {/firms}: +10ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/firms, GET} route +12ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/firms, POST} route +1ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/firms/:id/join, POST} route +2ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/firms/requests, GET} route +1ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/firms/members, GET} route +0ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/firms/:id/members/:userId, DELETE} route +1ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/firms/requests/:id/approve, POST} route +2ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/firms/requests/:id/decline, POST} route +2ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RoutesResolver] ClientsController {/clients}: +0ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/clients, GET} route +1ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/clients/conflicts, GET} route +1ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/clients, POST} route +0ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/clients/:id, GET} route +1ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/clients/:id, PATCH} route +1ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RoutesResolver] MattersController {/matters}: +1ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/matters, GET} route +1ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/matters, POST} route +1ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/matters/:id, GET} route +2ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/matters/:id, PATCH} route +1ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/matters/:id/access, POST} route +0ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/matters/:id/access/:userId, DELETE} route +1ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RoutesResolver] DocumentsController {/documents}: +1ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/documents/presign, POST} route +1ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/documents/:id/view, POST} route +0ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/documents, POST} route +2ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/documents/:id, PATCH} route +0ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/documents/:id, DELETE} route +1ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RoutesResolver] AuditController {/audit}: +1ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/audit, GET} route +1ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/audit/entity, GET} route +1ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/audit/export, GET} route +0ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RoutesResolver] DiaryController {/diary}: +1ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/diary, GET} route +1ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/diary, POST} route +0ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/diary/:id, PATCH} route +1ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [RouterExplorer] Mapped {/diary/:id, DELETE} route +1ms
+[Nest] 11512  - 10/08/2026, 21:52:33     LOG [NestApplication] Nest application successfully started +397ms

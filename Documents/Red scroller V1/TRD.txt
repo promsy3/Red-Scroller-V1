@@ -1,0 +1,194 @@
+# Technical Requirements Document (TRD): RedScroller
+
+**Version:** 1.0
+**Companion to:** RedScroller PRD v2
+**Platform:** Web (Next.js + NestJS), future mobile via React Native
+
+---
+
+## 1. Architecture Overview
+
+```
+┌─────────────────┐      ┌──────────────────┐      ┌─────────────────┐
+│  Next.js (Web)   │─────▶│   NestJS API      │─────▶│  PostgreSQL      │
+│  React Native    │ HTTPS│  (REST, Guards,   │ SQL  │  (Supabase-      │
+│  (future)        │      │   JWT strategy)   │      │   hosted, RLS)   │
+└─────────────────┘      └──────────────────┘      └─────────────────┘
+                                    │
+                                    ├──────────▶ Clerk / Auth0 (JWKS verification)
+                                    ├──────────▶ S3 (Secure Vault — signed URLs)
+                                    └──────────▶ Audit Log store (Postgres table)
+```
+
+- **Monorepo:** Turborepo, with shared packages for API types/DTOs (`packages/types`) consumed by both the Next.js web app and future React Native app.
+- **Two-layer access enforcement:** NestJS guards/interceptors (application-level) + PostgreSQL RLS (database-level defense-in-depth). Every restricted-data query must pass both layers.
+- **No Supabase client SDK / Supabase Auth** in the application — Supabase used only as managed Postgres + object storage infra. All reads/writes go through the NestJS API with server-derived `firmId`.
+
+---
+
+## 2. Data Model
+
+### 2.1 Core Entities
+
+**Firm**
+| Field | Type | Notes |
+|---|---|---|
+| id | uuid (PK) | |
+| name | string | |
+| createdAt | timestamp | |
+| status | enum | `active`, `suspended` (billing removed from MVP — no `trial`/`past_due` states for now) |
+
+**User**
+| Field | Type | Notes |
+|---|---|---|
+| id | uuid (PK) | matches auth provider's user id |
+| firmId | uuid (FK, nullable) | null until joined/created a firm |
+| email | string | |
+| role | enum | `admin`, `lawyer`, `paralegal` |
+| status | enum | `pending`, `active`, `removed` |
+| createdAt / removedAt | timestamp | |
+
+**FirmJoinRequest**
+| Field | Type | Notes |
+|---|---|---|
+| id | uuid (PK) | |
+| firmId | uuid (FK) | |
+| userId | uuid (FK) | |
+| requestedRole | enum | lawyer / paralegal |
+| status | enum | `pending`, `approved`, `declined` |
+| decidedBy | uuid (FK → User, nullable) | Admin who acted |
+| decidedAt | timestamp (nullable) | |
+
+**FirmInvite** (supports invite-link discovery, see PRD 6.10)
+| Field | Type | Notes |
+|---|---|---|
+| id | uuid (PK) | |
+| firmId | uuid (FK) | |
+| token | string (unique, indexed) | opaque, unguessable |
+| createdBy | uuid (FK → User) | |
+| expiresAt | timestamp | |
+| maxUses / useCount | int | optional cap |
+
+**Client**
+| Field | Type | Notes |
+|---|---|---|
+| id | uuid (PK) | |
+| firmId | uuid (FK) | |
+| type | enum | `corporate`, `individual` |
+| name | string | indexed for conflict-check fuzzy search |
+| verificationStatus | enum | |
+| createdAt | timestamp | |
+
+**Matter**
+| Field | Type | Notes |
+|---|---|---|
+| id | uuid (PK) | |
+| firmId | uuid (FK) | |
+| clientId | uuid (FK) | |
+| status | enum | `active`, `pending`, `closed` |
+| isRestricted | bool | default `false` — gates MatterAccess enforcement |
+| archivedAt | timestamp (nullable) | for future retention/litigation-hold work |
+
+**MatterAccess** (new — implements ethical walls)
+| Field | Type | Notes |
+|---|---|---|
+| matterId | uuid (FK) | |
+| userId | uuid (FK) | |
+| grantedBy | uuid (FK → User) | |
+| grantedAt | timestamp | |
+| *Composite PK: (matterId, userId)* | | Only consulted when `Matter.isRestricted = true` |
+
+**Document** (Secure Vault)
+| Field | Type | Notes |
+|---|---|---|
+| id | uuid (PK) | |
+| matterId | uuid (FK) | |
+| firmId | uuid (FK, denormalized for query speed) | |
+| s3Key | string | |
+| uploadedBy | uuid (FK → User) | |
+| uploadedAt | timestamp | |
+| version | int | increments on re-upload (see Open Gaps in PRD) |
+
+**DiaryEvent**
+| Field | Type | Notes |
+|---|---|---|
+| id | uuid (PK) | |
+| firmId | uuid (FK) | |
+| matterId | uuid (FK, nullable) | |
+| type | enum | `meeting`, `court_date`, `filing_deadline` |
+| startAt | timestamp | |
+| createdBy | uuid (FK → User) | |
+
+**AuditLog**
+| Field | Type | Notes |
+|---|---|---|
+| id | uuid (PK) | |
+| firmId | uuid (FK, indexed) | |
+| actorId | uuid (FK → User) | |
+| action | enum | `create`, `update`, `delete`, `view_document`, `admin_override_view`, `member_removed`, `join_approved`, etc. |
+| entityType | string | `Matter`, `Client`, `Document`, `User`, ... |
+| entityId | uuid | |
+| metadata | jsonb | free-form detail (e.g., which fields changed) |
+| createdAt | timestamp | immutable, append-only |
+
+---
+
+## 3. API Surface (representative, not exhaustive)
+
+**Auth / Firm**
+- `POST /firms` — create firm (becomes Admin)
+- `POST /firms/:firmId/join-requests` — request to join
+- `GET /firms/:firmId/join-requests?status=pending` — Admin only
+- `POST /firms/:firmId/join-requests/:id/approve` — Admin only
+- `POST /firms/:firmId/join-requests/:id/decline` — Admin only
+- `POST /firms/:firmId/invites` — Admin generates invite link
+- `POST /firms/:firmId/members/:userId/remove` — Admin only (offboarding)
+
+**Clients**
+- `GET /clients?search=` — includes fuzzy conflict-check matching
+- `POST /clients`
+- `GET /clients/:id`
+
+**Matters**
+- `POST /matters`
+- `GET /matters` — filtered server-side by MatterAccess when `isRestricted`
+- `POST /matters/:id/access` — grant/revoke MatterAccess (Admin or matter owner)
+
+**Documents**
+- `POST /matters/:id/documents/upload-url` — returns signed S3 URL, scoped by firmId + MatterAccess check
+- `GET /matters/:id/documents/:docId/download-url` — same scoping; **logs a `view_document` AuditLog entry**
+
+**Diary**
+- Standard CRUD, scoped by firmId
+
+**Audit**
+- `GET /firms/:firmId/audit-log?entityType=&actorId=&from=&to=` — Admin only, exportable as CSV
+
+---
+
+## 4. Security Requirements
+
+- **JWT verification:** every request validated against Clerk/Auth0 JWKS; `firmId` and `role` claims re-derived from the token server-side on every request — never trusted from request body/headers.
+- **RLS policies:** Postgres RLS on every tenant-scoped table (`Client`, `Matter`, `Document`, `DiaryEvent`, `AuditLog`) filtering on `firmId` matching the session's JWT claim, as defense-in-depth beneath NestJS guards.
+- **MatterAccess enforcement:** NestJS interceptor checks `Matter.isRestricted` → if true, verify `MatterAccess` row exists for the requesting user (or role = Admin) before returning data or issuing a signed S3 URL.
+- **Signed URLs:** short-lived (e.g., 5 min expiry), single-purpose, generated only after both firmId and MatterAccess checks pass.
+- **Audit immutability:** AuditLog table is insert-only at the application layer (no update/delete endpoints exposed).
+
+---
+
+## 5. Non-Functional Requirements
+
+- **Performance:** sub-second p95 API response time for standard CRUD; TanStack Query caching on the frontend to minimize redundant calls.
+- **Availability:** target 99.5% uptime for MVP (adjust once real SLAs are negotiated with early customers).
+- **Backup:** daily automated Postgres backups (Supabase default), point-in-time recovery enabled. RPO/RTO targets to be finalized (see PRD Open Gaps).
+- **Scalability:** stateless NestJS instances behind a load balancer; horizontal scaling straightforward given JWT-based auth (no server session state).
+
+---
+
+## 6. Out of Scope for This TRD (tracked in PRD Open Gaps)
+
+- Billing/Stripe integration (deferred per PRD 6.6)
+- MFA enforcement policy
+- Document versioning UI/diffing
+- Global cross-module search
+- SOC 2 / data residency architecture

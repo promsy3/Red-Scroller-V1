@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: redscroller_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup environment variables
+        run: |
+          echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/redscroller_test" >> $GITHUB_ENV
+          echo "CLERK_SECRET_KEY=test_secret_key" >> $GITHUB_ENV
+          echo "CLERK_AUTHORIZED_PARTY=http://localhost:3000" >> $GITHUB_ENV
+          echo "RESEND_API_KEY=test_resend_key" >> $GITHUB_ENV
+          echo "RESEND_FROM_EMAIL=test@example.com" >> $GITHUB_ENV
+
+      - name: Generate Prisma Client
+        working-directory: ./packages/database
+        run: npx prisma generate
+
+      - name: Run database migrations
+        working-directory: ./packages/database
+        run: npx prisma db push
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/redscroller_test
+
+      - name: Run backend unit tests
+        working-directory: ./apps/api
+        run: npm test
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/redscroller_test
+          CLERK_SECRET_KEY: test_secret_key
+          CLERK_AUTHORIZED_PARTY: http://localhost:3000
+          RESEND_API_KEY: test_resend_key
+          RESEND_FROM_EMAIL: test@example.com
+
+      - name: Run backend e2e tests (including RLS access control)
+        working-directory: ./apps/api
+        run: npm run test:e2e
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/redscroller_test
+          CLERK_SECRET_KEY: test_secret_key
+          CLERK_AUTHORIZED_PARTY: http://localhost:3000
+          RESEND_API_KEY: test_resend_key
+          RESEND_FROM_EMAIL: test@example.com
+
+      - name: Run frontend TypeScript type check
+        working-directory: ./apps/web
+        run: npm run check-types
