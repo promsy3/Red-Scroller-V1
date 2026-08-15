@@ -13,11 +13,13 @@ describe('MattersController - Fuzzy Name Matching', () => {
       matterAccess: { findFirst: jest.fn() },
     };
     audit = { log: jest.fn() };
-    controller = new MattersController(prismaMock, audit);
+    const emailService = { sendMatterAccessGranted: jest.fn().mockResolvedValue(undefined) };
+    controller = new MattersController(prismaMock, audit, emailService as any);
   });
 
   it('calculates Levenshtein distance correctly', () => {
-    const testController = new MattersController(prismaMock, audit);
+    const emailService = { sendMatterAccessGranted: jest.fn().mockResolvedValue(undefined) };
+    const testController = new MattersController(prismaMock, audit, emailService as any);
     
     expect((testController as any).levenshteinDistance('kitten', 'sitting')).toBe(3);
     expect((testController as any).levenshteinDistance('saturday', 'sunday')).toBe(3);
@@ -26,7 +28,8 @@ describe('MattersController - Fuzzy Name Matching', () => {
   });
 
   it('calculates similarity score correctly', () => {
-    const testController = new MattersController(prismaMock, audit);
+    const emailService = { sendMatterAccessGranted: jest.fn().mockResolvedValue(undefined) };
+    const testController = new MattersController(prismaMock, audit, emailService as any);
     
     expect((testController as any).calculateSimilarity('Raphael', 'Raphael')).toBe(1);
     expect((testController as any).calculateSimilarity('Raphael', 'Rafael')).toBeCloseTo(0.75, 1);

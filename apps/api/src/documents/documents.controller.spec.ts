@@ -16,12 +16,16 @@ describe('DocumentsController', () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-key';
 
     prisma = {
-      user: { findUnique: jest.fn() },
+      user: { findUnique: jest.fn(), findMany: jest.fn() },
       matter: { findFirst: jest.fn() },
       document: { findFirst: jest.fn(), delete: jest.fn(), update: jest.fn() },
       matterAccess: { findFirst: jest.fn() },
     };
     audit = { log: jest.fn() };
+    const emailService = {
+      sendDocumentUploaded: jest.fn().mockResolvedValue(undefined),
+      sendMatterAccessGranted: jest.fn().mockResolvedValue(undefined),
+    };
     (createClient as jest.Mock).mockReturnValue({
       storage: {
         from: jest.fn().mockReturnValue({
@@ -30,7 +34,7 @@ describe('DocumentsController', () => {
         }),
       },
     });
-    controller = new DocumentsController(prisma, audit);
+    controller = new DocumentsController(prisma, audit, emailService as any);
   });
 
   it('rejects uploads for restricted matters when the user has no MatterAccess entry', async () => {

@@ -1,4 +1,4 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { ForbiddenException } from '@nestjs/common';
 import { DiaryController } from './diary.controller';
 
 describe('DiaryController', () => {
@@ -34,7 +34,12 @@ describe('DiaryController', () => {
     prisma.matter.findFirst.mockResolvedValue({ id: 'matter-1', firmId: 'firm-1', isRestricted: true, assignedTo: 'other-user' });
     prisma.matterAccess.findFirst.mockResolvedValue(null);
 
-    await expect(controller.createEvent({ user: { sub: 'user-1' } }, { title: 'Court hearing', date: '2026-09-01T10:00:00.000Z', matterId: 'matter-1' })).rejects.toThrow(ForbiddenException);
+    await expect(
+      controller.createEvent(
+        { user: { sub: 'user-1' } },
+        { title: 'Court hearing', date: '2026-09-01T10:00:00.000Z', type: 'court_date', matterId: 'matter-1' },
+      ),
+    ).rejects.toThrow(ForbiddenException);
   });
 
   it('rejects deleting diary events for restricted matters without access', async () => {
