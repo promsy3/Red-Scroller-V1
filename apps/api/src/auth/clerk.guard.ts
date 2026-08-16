@@ -35,6 +35,7 @@ export class ClerkAuthGuard implements CanActivate {
       if (!clerkUserId) throw new Error('Clerk token has no subject');
 
       this.logger.log(`Clerk token verified. clerkId=${clerkUserId}`);
+      this.logger.log(`clerkUserId type: ${typeof clerkUserId}, value: ${JSON.stringify(clerkUserId)}`);
 
       let user = await this.prisma.user.findUnique({ where: { clerkId: clerkUserId } });
 

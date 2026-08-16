@@ -50,7 +50,13 @@ export async function fetchApi(endpoint: string, token: string, options: Request
   }
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
+    const rawBody = await response.text();
+    console.error(`[fetchApi ERROR] ${response.status} ${response.statusText} at ${url}`);
+    console.error(`[fetchApi ERROR BODY]`, rawBody);
+    let error: any = {};
+    try {
+      error = JSON.parse(rawBody);
+    } catch (e) {}
     throw new Error(error.message || 'API Error');
   }
   return response.json();
