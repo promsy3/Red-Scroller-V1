@@ -24,7 +24,7 @@ export default async function Dashboard() {
     safeFetch('/auth/me', session.access_token),
   ])
 
-  const openMatters    = matters.filter((m: any) => m.status === 'open').length
+  const openMatters    = matters.filter((m: any) => m.status === 'active').length
   const closedMatters  = matters.filter((m: any) => m.status === 'closed').length
   const upcomingEvents = diaryEvents.filter((e: any) => new Date(e.date) >= new Date())
   const recentMatters  = [...matters].sort((a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 5)
