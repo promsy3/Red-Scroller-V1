@@ -72,6 +72,23 @@ enum AuditEntityType {
   DIARY_EVENT
 }
 
+enum SubscriptionPlan {
+  SOLO
+  FIRM
+}
+
+enum BillingInterval {
+  MONTHLY
+  YEARLY
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+}
+
 model Firm {
   id        String     @id @default(uuid()) @db.Uuid
   name      String
@@ -86,6 +103,7 @@ model Firm {
   documents     Document[]
   auditLogs     AuditLog[]
   diaryEvents   DiaryEvent[]
+  subscription  Subscription?
 }
 
 model User {
@@ -223,4 +241,21 @@ model DiaryEvent {
 
   firm        Firm          @relation(fields: [firmId], references: [id], onDelete: Cascade)
   matter      Matter?        @relation(fields: [matterId], references: [id], onDelete: Cascade)
+}
+
+model Subscription {
+  id                       String               @id @default(uuid()) @db.Uuid
+  firmId                   String               @unique @db.Uuid
+  plan                     SubscriptionPlan
+  billingInterval          BillingInterval
+  status                   SubscriptionStatus    @default(TRIALING)
+  trialEndsAt              DateTime?
+  currentPeriodEnd         DateTime?
+  paystackCustomerCode     String?
+  paystackSubscriptionCode String?
+  paystackAuthorizationCode String?
+  createdAt                DateTime             @default(now())
+  updatedAt                DateTime             @updatedAt
+
+  firm                     Firm                 @relation(fields: [firmId], references: [id], onDelete: Cascade)
 }
