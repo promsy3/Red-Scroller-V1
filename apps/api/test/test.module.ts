@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, ValidationPipe } from '@nestjs/common';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from '../src/app.controller';
 import { AppService } from '../src/app.service';
@@ -12,6 +12,7 @@ import { AuditModule } from '../src/audit/audit.module';
 import { DiaryModule } from '../src/diary/diary.module';
 import { TestAuthGuard } from './test-auth.guard';
 import { RlsInterceptor } from '../src/prisma/rls.interceptor';
+import { ClerkAuthGuard } from '../src/auth/clerk.guard';
 
 @Module({
   imports: [PrismaModule, FirmsModule, ClientsModule, MattersModule, DocumentsModule, AuditModule, DiaryModule],
@@ -25,6 +26,19 @@ import { RlsInterceptor } from '../src/prisma/rls.interceptor';
     {
       provide: APP_INTERCEPTOR,
       useClass: RlsInterceptor,
+    },
+    {
+      provide: ValidationPipe,
+      useValue: new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: false, // More permissive for tests
+        transform: true,
+      }),
+    },
+    // Override ClerkAuthGuard with TestAuthGuard for all controllers
+    {
+      provide: ClerkAuthGuard,
+      useClass: TestAuthGuard,
     },
   ],
 })
