@@ -1,11 +1,12 @@
 "use client"
 import { useState } from 'react'
+import { useAuth } from '@clerk/nextjs'
 import { joinFirmAction } from '../actions'
-import { createClient } from '@/utils/supabase/client'
 import { fetchApi } from '@/utils/api'
 import { redirect } from 'next/navigation'
 
 export default function JoinFirmButton({ firmId }: { firmId: string }) {
+  const { getToken } = useAuth()
   const [status, setStatus] = useState<'idle' | 'loading' | 'requested' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -25,11 +26,10 @@ export default function JoinFirmButton({ firmId }: { firmId: string }) {
   const pollForApproval = (firmId: string) => {
     const interval = setInterval(async () => {
       try {
-        const supabase = createClient()
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session) return
+        const token = await getToken()
+        if (!token) return
 
-        const user = await fetchApi('/auth/me', session.access_token)
+        const user = await fetchApi('/auth/me', token)
         if (user.firmId === firmId) {
           clearInterval(interval)
           redirect('/dashboard')

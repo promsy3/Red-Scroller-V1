@@ -7,7 +7,7 @@ export default function Onboarding() {
         <p className="rs-onboarding-eyebrow">Welcome to RedScroller</p>
         <h1>Choose how you want to start</h1>
         <p className="rs-onboarding-subtitle">
-          RedScroller works inside a firm workspace. Create your own firm to get started, or join an existing one if your practice already uses the platform.
+          RedScroller works inside a firm workspace. Create your own firm to get started, join an existing one, or practice solo.
         </p>
       </div>
 
@@ -41,6 +41,21 @@ export default function Onboarding() {
           <h2>Join a Firm</h2>
           <p>Request access to an existing firm and wait for an admin to approve your membership.</p>
           <div className="rs-onboarding-card-tag">Best for: lawyers, paralegals, or staff joining an existing team</div>
+        </Link>
+
+        <Link
+          href="/onboarding/solo"
+          className="rs-onboarding-card"
+        >
+          <div className="rs-onboarding-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          </div>
+          <h2>I'm Practicing Solo</h2>
+          <p>Create a simplified workspace just for yourself. Skip team setup and start managing your practice immediately.</p>
+          <div className="rs-onboarding-card-tag">Best for: solo practitioners, independent consultants</div>
         </Link>
       </div>
     </div>

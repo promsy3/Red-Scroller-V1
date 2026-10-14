@@ -1,8 +1,16 @@
 import { getFreshClientToken } from '@/utils/auth-token'
 
+// Custom error class for service unavailability (503)
+export class ServiceUnavailableError extends Error {
+  constructor(message: string = 'Service temporarily unavailable. Please retry.') {
+    super(message);
+    this.name = 'ServiceUnavailableError';
+  }
+}
+
 export async function fetchApi(endpoint: string, token: string, options: RequestInit = {}) {
-  const url = `http://localhost:3001${endpoint}`;
-  
+  const url = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}${endpoint}`;
+
   const makeRequest = async (authToken: string): Promise<Response> => {
     return fetch(url, {
       ...options,
@@ -57,6 +65,12 @@ export async function fetchApi(endpoint: string, token: string, options: Request
     try {
       error = JSON.parse(rawBody);
     } catch (e) {}
+
+    // Special handling for 503 Service Unavailable
+    if (response.status === 503) {
+      throw new ServiceUnavailableError(error.message || 'Service temporarily unavailable. Please retry.');
+    }
+
     throw new Error(error.message || 'API Error');
   }
   return response.json();

@@ -1,9 +1,10 @@
 "use client"
 import { useState, useEffect } from 'react'
-import { createClient } from '@/utils/supabase/client'
+import { useAuth } from '@clerk/nextjs'
 import { fetchApi } from '@/utils/api'
 
 export default function ManageAccess({ matterId, isRestricted, initialAccess, token }: { matterId: string, isRestricted: boolean, initialAccess: any[], token: string }) {
+  const { getToken } = useAuth()
   const [accessList, setAccessList] = useState(initialAccess)
   const [team, setTeam] = useState<any[]>([])
   const [selectedUser, setSelectedUser] = useState('')
@@ -12,12 +13,14 @@ export default function ManageAccess({ matterId, isRestricted, initialAccess, to
   useEffect(() => {
     const loadTeam = async () => {
       try {
-        const data = await fetchApi('/firms/members', token)
+        const freshToken = await getToken()
+        if (!freshToken) return
+        const data = await fetchApi('/firms/members', freshToken)
         setTeam(data || [])
       } catch (e) { }
     }
     if (isRestricted) loadTeam()
-  }, [isRestricted, token])
+  }, [isRestricted])
 
   const handleGrant = async () => {
     if (!selectedUser) return

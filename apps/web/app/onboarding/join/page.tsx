@@ -1,66 +1,55 @@
 "use client"
 import { useState, useEffect, use } from 'react'
-import { createClient } from '@/utils/supabase/client'
+import { useAuth } from '@clerk/nextjs'
 import { fetchApi } from '@/utils/api'
 import Link from 'next/link'
-import JoinFirmButton from './JoinFirmButton'
 import { redirect } from 'next/navigation'
 
 export default function JoinFirm({ searchParams }: { searchParams: Promise<{ token?: string }> }) {
   const resolvedParams = use(searchParams)
+  const { getToken } = useAuth()
   const [sessionToken, setSessionToken] = useState<string | null>(null)
-  const [firms, setFirms] = useState<any[]>([])
-  const [searchQuery, setSearchQuery] = useState('')
-  const [inviteStatus, setInviteStatus] = useState<'loading' | 'success' | 'error' | null>(null)
+  const [inviteStatus, setInviteStatus] = useState<'loading' | 'success' | 'error' | 'no-token' | null>(null)
   const [inviteData, setInviteData] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const init = async () => {
-      const supabase = createClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (!session) {
+      const token = await getToken()
+
+      if (!token) {
         redirect('/login')
         return
       }
 
-      setSessionToken(session.access_token)
+      setSessionToken(token)
 
-      // Handle invite token
       if (resolvedParams.token) {
+        setInviteStatus('loading')
         try {
-          const data = await fetchApi(`/firms/invites/${resolvedParams.token}`, session.access_token);
-          
+          const data = await fetchApi(`/firms/invites/${resolvedParams.token}`, token)
+
           // Auto-join the firm via invite
-          await fetchApi(`/firms/${data.firmId}/join`, session.access_token, {
+          await fetchApi(`/firms/${data.firmId}/join`, token, {
             method: 'POST',
-          });
-          
+          })
+
           // Increment use count
-          await fetchApi(`/firms/invites/${resolvedParams.token}/use`, session.access_token, {
+          await fetchApi(`/firms/invites/${resolvedParams.token}/use`, token, {
             method: 'POST',
-          });
-          
+          })
+
           setInviteData(data)
           setInviteStatus('success')
-          
+
           // Start polling for approval
-          pollForApproval(session.access_token, data.firmId)
+          pollForApproval(token, data.firmId)
         } catch (error) {
           setInviteStatus('error')
         }
       } else {
-        // Load available firms
-        try {
-          const firmsData = await fetchApi('/firms', session.access_token);
-          setFirms(firmsData)
-        } catch (error) {
-          console.error(error);
-        }
+        // No invite token — direct the user to get one from their admin
+        setInviteStatus('no-token')
       }
-      
-      setLoading(false)
     }
 
     init()
@@ -77,17 +66,12 @@ export default function JoinFirm({ searchParams }: { searchParams: Promise<{ tok
       } catch (error) {
         console.error('Polling error:', error)
       }
-    }, 3000) // Poll every 3 seconds
+    }, 3000)
 
-    // Cleanup on unmount
     return () => clearInterval(interval)
   }
 
-  const filteredFirms = firms.filter(firm =>
-    firm.name.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-
-  if (loading) {
+  if (inviteStatus === 'loading' || inviteStatus === null) {
     return (
       <div className="rs-loading">
         <div className="rs-spinner"></div>
@@ -127,42 +111,19 @@ export default function JoinFirm({ searchParams }: { searchParams: Promise<{ tok
     )
   }
 
+  // no-token state — invite-only
   return (
     <div className="rs-onboarding-content">
       <div>
         <p className="rs-onboarding-eyebrow">Join a Firm</p>
-        <h1>Request access to an existing firm</h1>
-        <p className="rs-onboarding-subtitle">An admin will approve your membership and assign your role.</p>
+        <h1>You need an invite link</h1>
+        <p className="rs-onboarding-subtitle">
+          Joining a firm requires an invite link from a firm admin. Ask your practice lead or firm administrator to generate one from their team settings.
+        </p>
+        <p className="rs-onboarding-subtitle" style={{ marginTop: '8px', opacity: 0.7, fontSize: '14px' }}>
+          Once you have a link, open it directly and you'll be guided through the process automatically.
+        </p>
       </div>
-
-      <div className="rs-search-container">
-        <input
-          type="text"
-          placeholder="Search firms by name..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="rs-form-input"
-        />
-      </div>
-
-      {filteredFirms.length === 0 ? (
-        <div className="rs-empty-state">
-          {searchQuery ? 'No firms match your search.' : 'No firms are available yet. Ask your practice lead to create the workspace first.'}
-        </div>
-      ) : (
-        <div className="rs-firm-list">
-          {filteredFirms.map((firm: any) => (
-            <div key={firm.id} className="rs-firm-card">
-              <div className="rs-firm-card-content">
-                <h3 className="rs-firm-card-name">{firm.name}</h3>
-                <p className="rs-firm-card-status">Status: {firm.status}</p>
-              </div>
-              <JoinFirmButton firmId={firm.id} />
-            </div>
-          ))}
-        </div>
-      )}
-
       <div className="rs-form-actions">
         <Link href="/onboarding" className="rs-button rs-button-secondary">Back</Link>
       </div>

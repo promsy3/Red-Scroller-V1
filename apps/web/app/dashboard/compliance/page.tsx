@@ -1,10 +1,9 @@
-import { createClient } from '@/utils/supabase/server'
+import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 
 export default async function CompliancePage() {
-  const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) redirect('/login')
+  const { userId } = await auth()
+  if (!userId) redirect('/login')
 
   return (
     <div className="rs-compliance-page">

@@ -1,19 +1,20 @@
-import { createClient } from '@/utils/supabase/server'
+import { auth } from '@clerk/nextjs/server'
 import { fetchApi } from '@/utils/api'
 import { redirect } from 'next/navigation'
 import CreateEventForm from './CreateEventForm'
 import DiaryEventList from './DiaryEventList'
 
 export default async function DiaryPage() {
-  const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) redirect('/login')
+  const { userId, getToken } = await auth()
+  if (!userId) redirect('/login')
+  const token = await getToken()
+  if (!token) redirect('/login')
 
   let events = []
   let matters = []
   try {
-    events = await fetchApi('/diary', session.access_token)
-    matters = await fetchApi('/matters', session.access_token)
+    events = await fetchApi('/diary', token)
+    matters = await fetchApi('/matters', token)
   } catch (e) {
     console.error(e)
   }
@@ -26,9 +27,9 @@ export default async function DiaryPage() {
           <h1 className="rs-diary-title">Diary</h1>
           <p className="rs-diary-subtitle">Keep deadlines, hearings, and client meetings in one secure schedule.</p>
         </div>
-        <CreateEventForm matters={matters} token={session.access_token} />
+        <CreateEventForm matters={matters} token={token} />
       </div>
-      <DiaryEventList events={events} matters={matters} token={session.access_token} />
+      <DiaryEventList events={events} matters={matters} token={token} />
     </div>
   )
 }

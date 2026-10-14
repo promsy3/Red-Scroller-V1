@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect } from 'react'
-import { createClient } from '@/utils/supabase/client'
+import { useAuth } from '@clerk/nextjs'
 import { fetchApi } from '@/utils/api'
 import { redirect } from 'next/navigation'
 import ApproveButton from './ApproveButton'
@@ -9,6 +9,7 @@ import RemoveMemberButton from './RemoveMemberButton'
 import InviteLinkGenerator from './InviteLinkGenerator'
 
 export default function TeamSettings() {
+  const { getToken } = useAuth()
   const [user, setUser] = useState<any>(null)
   const [requests, setRequests] = useState<any[]>([])
   const [members, setMembers] = useState<any[]>([])
@@ -16,26 +17,25 @@ export default function TeamSettings() {
   const [sessionToken, setSessionToken] = useState<string | null>(null)
 
   const loadData = async () => {
-    const supabase = createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
+    const token = await getToken()
+    if (!token) {
       redirect('/login')
       return
     }
 
-    setSessionToken(session.access_token)
+    setSessionToken(token)
 
     try {
-      const userData = await fetchApi('/auth/me', session.access_token)
+      const userData = await fetchApi('/auth/me', token)
       setUser(userData)
 
       // Always fetch members (all users can view the roster)
-      const membersData = await fetchApi('/firms/members', session.access_token)
+      const membersData = await fetchApi('/firms/members', token)
       setMembers(membersData)
 
       // Only fetch requests if admin
       if (userData.role === 'admin') {
-        const requestsData = await fetchApi('/firms/requests', session.access_token)
+        const requestsData = await fetchApi('/firms/requests', token)
         setRequests(requestsData)
       }
     } catch (error) {

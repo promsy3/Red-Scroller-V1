@@ -1,13 +1,14 @@
 "use client"
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { createClient } from '@/utils/supabase/client'
+import { useAuth } from '@clerk/nextjs'
 import { fetchApi } from '@/utils/api'
 
 function NewMatterForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const preselectedClientId = searchParams.get('clientId') || ''
+  const { getToken } = useAuth()
 
   const [clients, setClients] = useState<any[]>([])
   const [form, setForm] = useState({ title: '', description: '', clientId: preselectedClientId, isRestricted: false })
@@ -19,10 +20,9 @@ function NewMatterForm() {
 
   useEffect(() => {
     const load = async () => {
-      const supabase = createClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
-      const clients = await fetchApi('/clients', session.access_token)
+      const token = await getToken()
+      if (!token) return
+      const clients = await fetchApi('/clients/list', token)
       if (clients) setClients(clients)
     }
     load()
@@ -35,11 +35,10 @@ function NewMatterForm() {
       return
     }
     const timer = setTimeout(async () => {
-      const supabase = createClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
+      const token = await getToken()
+      if (!token) return
       try {
-        const data = await fetchApi(`/clients/conflicts?q=${encodeURIComponent(form.title)}`, session.access_token)
+        const data = await fetchApi(`/clients/conflicts?q=${encodeURIComponent(form.title)}`, token)
         if (data) setConflicts(data)
       } catch (error) {
         // Silently fail conflict check - non-blocking
@@ -57,12 +56,11 @@ function NewMatterForm() {
 
     setLoading(true)
     setError(null)
-    const supabase = createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return
+    const token = await getToken()
+    if (!token) return
 
     try {
-      const matter = await fetchApi('/matters', session.access_token, {
+      const matter = await fetchApi('/matters', token, {
         method: 'POST',
         body: JSON.stringify(form),
       })

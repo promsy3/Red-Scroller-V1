@@ -1,5 +1,5 @@
-import { createClient } from '@/utils/supabase/server'
-import { fetchApi } from '@/utils/api'
+import { auth } from '@clerk/nextjs/server'
+import { fetchApi, ServiceUnavailableError } from '@/utils/api'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import UpcomingEventsList from './UpcomingEventsList'
@@ -8,20 +8,59 @@ async function safeFetch(path: string, token: string) {
   try { return await fetchApi(path, token) } catch { return [] }
 }
 
+function ServiceUnavailablePage({ message }: { message: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '20px', textAlign: 'center' }}>
+      <div>
+        <h1 style={{ fontSize: '24px', marginBottom: '16px', color: '#f59e0b' }}>Service Temporarily Unavailable</h1>
+        <p style={{ fontSize: '16px', color: '#6b7280', marginBottom: '24px' }}>
+          {message || 'The database is temporarily unreachable. Please try again.'}
+        </p>
+        <Link
+          href="/dashboard"
+          style={{
+            display: 'inline-block',
+            padding: '12px 24px',
+            backgroundColor: '#6366f1',
+            color: 'white',
+            textDecoration: 'none',
+            borderRadius: '8px',
+            fontSize: '16px',
+          }}
+        >
+          Retry
+        </Link>
+      </div>
+    </div>
+  )
+}
+
 export default async function Dashboard() {
-  const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) redirect('/login')
+  const { userId, getToken } = await auth()
+  if (!userId) redirect('/login')
+  const token = await getToken()
+  if (!token) redirect('/login')
 
   let user: any = null
-  try { user = await fetchApi('/auth/me', session.access_token) } catch {}
+  try {
+    user = await fetchApi('/auth/me', token)
+  } catch (error) {
+    // If it's a 503 (service unavailable), show a retry message instead of redirecting
+    if (error instanceof ServiceUnavailableError) {
+      return <ServiceUnavailablePage message={error.message} />
+    }
+    // If we get a 401 or other auth error, redirect to login
+    // This indicates a token verification failure
+    console.error('Failed to fetch user data:', error)
+    redirect('/login')
+  }
   if (!user || !user.firmId) redirect('/onboarding')
 
   const [clients, matters, diaryEvents, me] = await Promise.all([
-    safeFetch('/clients', session.access_token),
-    safeFetch('/matters', session.access_token),
-    safeFetch('/diary', session.access_token),
-    safeFetch('/auth/me', session.access_token),
+    safeFetch('/clients/list', token),
+    safeFetch('/matters', token),
+    safeFetch('/diary', token),
+    safeFetch('/auth/me', token),
   ])
 
   const openMatters    = matters.filter((m: any) => m.status === 'active').length

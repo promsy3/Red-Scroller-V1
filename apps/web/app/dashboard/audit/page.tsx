@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server'
+import { auth } from '@clerk/nextjs/server'
 import { fetchApi } from '@/utils/api'
 import { redirect } from 'next/navigation'
 
@@ -12,14 +12,15 @@ type AuditLog = {
 }
 
 export default async function AuditPage() {
-  const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) redirect('/login')
+  const { userId, getToken } = await auth()
+  if (!userId) redirect('/login')
+  const token = await getToken()
+  if (!token) redirect('/login')
 
   let logs: AuditLog[] = []
   let error: string | null = null
   try {
-    logs = await fetchApi('/audit?limit=100', session.access_token)
+    logs = await fetchApi('/audit?limit=100', token)
   } catch (e: unknown) {
     error = e instanceof Error ? e.message : 'Failed to load audit logs'
   }

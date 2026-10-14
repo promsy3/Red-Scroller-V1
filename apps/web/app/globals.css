@@ -104,25 +104,32 @@ html, body {
 a { color: inherit; text-decoration: none; }
 
 /* =============================================
-   CLERK SIGN-IN
+   SIGN-IN PAGE — Clerk <SignIn> themed to RedScroller
    ============================================= */
 .rs-login-page {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
-  padding: 48px 24px;
+  /* mobile-safe: top padding gives breathing room; bottom adds safe-area */
+  padding: 40px 20px max(40px, env(safe-area-inset-bottom));
   color: #fff;
   background: #090909;
 }
 
-.rs-login-panel { width: min(100%, 600px); }
+.rs-login-panel {
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+}
 
+/* ── Brand ── */
 .rs-login-brand {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-bottom: 52px;
-  font-size: 25px;
+  gap: 12px;
+  margin-bottom: 44px;
+  font-size: 22px;
   font-weight: 800;
   letter-spacing: -0.06em;
 }
@@ -130,21 +137,23 @@ a { color: inherit; text-decoration: none; }
 .rs-login-brand > span:last-child > span { color: #f20d1a; }
 
 .rs-brand-mark {
-  width: 54px;
-  height: 54px;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
   display: grid;
   place-items: center;
-  border-radius: 15px;
+  border-radius: 14px;
   color: #fff;
   background: #f20d1a;
 }
 
-.rs-brand-mark svg { width: 28px; height: 28px; }
+.rs-brand-mark svg { width: 26px; height: 26px; }
 
+/* ── Eyebrow / Heading ── */
 .rs-login-eyebrow {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   color: #f20d1a;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 800;
   letter-spacing: .16em;
   text-transform: uppercase;
@@ -152,54 +161,592 @@ a { color: inherit; text-decoration: none; }
 
 .rs-login-panel h1 {
   margin: 0;
-  font-size: clamp(32px, 5vw, 42px);
-  line-height: 1.12;
-  letter-spacing: -.055em;
+  font-size: clamp(28px, 7vw, 40px);
+  line-height: 1.1;
+  letter-spacing: -.05em;
 }
 
 .rs-login-subtitle {
-  margin: 20px 0 36px;
+  margin: 16px 0 32px;
   color: #a3a3a3;
-  font-size: 18px;
+  font-size: 16px;
+  line-height: 1.55;
 }
 
-.rs-clerk-root, .rs-clerk-card-box { width: 100%; }
-.rs-clerk-card { width: 100%; padding: 0; background: transparent; border: 0; box-shadow: none; }
-.rs-clerk-social-buttons {
-  display: grid !important;
-  gap: 12px;
-  margin-bottom: 22px;
+/* ── Form ── */
+.rs-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
-.rs-clerk-social-button {
-  display: inline-flex !important;
+
+/* Error banner */
+.rs-login-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: rgba(242, 13, 26, .12);
+  border: 1px solid rgba(242, 13, 26, .35);
+  color: #ff6b74;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.rs-login-error svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+}
+
+/* Google Auth Button */
+.rs-google-btn {
+  display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 50px;
-  border: 1px solid #363636;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 0 24px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
   color: #fff;
   background: #1a1a1a;
-  box-shadow: none;
+  border: 1px solid #3a3a3a;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
 }
-.rs-clerk-divider-line { background: #343434; }
-.rs-clerk-divider-text { color: #8a8a8a; }
-.rs-clerk-label { color: #fff; font-size: 15px; font-weight: 700; }
-.rs-clerk-input {
-  min-height: 54px;
-  color: #fff;
-  border: 1px solid #3f3f3f;
-  background: #1a1a1a;
-  box-shadow: none;
-}
-.rs-clerk-input:focus { border-color: #f20d1a; box-shadow: 0 0 0 3px rgba(242, 13, 26, .18); }
-.rs-clerk-primary-button { min-height: 52px; background: #f20d1a; box-shadow: none; font-size: 15px; font-weight: 700; }
-.rs-clerk-primary-button:hover { background: #d90b17; }
-.rs-clerk-footer, .rs-clerk-footer-text { color: #a3a3a3; }
-.rs-clerk-footer-link { color: #f20d1a; font-weight: 700; }
 
-@media (max-width: 640px) {
-  .rs-login-page { padding: 32px 20px; align-items: start; }
-  .rs-login-brand { margin-bottom: 42px; }
-  .rs-login-subtitle { font-size: 16px; }
+.rs-google-btn:hover:not(:disabled) {
+  background: #222;
+  border-color: #4a4a4a;
+}
+
+.rs-google-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.rs-google-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.rs-google-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Divider */
+.rs-login-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 4px 0;
+}
+
+.rs-login-divider::before,
+.rs-login-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #303030;
+}
+
+.rs-login-divider span {
+  padding: 0 16px;
+  color: #7a7a7a;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+/* Field */
+.rs-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rs-field label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e0e0e0;
+  letter-spacing: .01em;
+}
+
+.rs-field-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.rs-forgot-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f20d1a;
+  text-decoration: none;
+  transition: color 0.15s;
+  white-space: nowrap;
+}
+
+.rs-forgot-link:hover { color: #ff3d47; }
+.rs-forgot-link:focus-visible {
+  outline: 2px solid rgba(242, 13, 26, .5);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.rs-field input[type="email"],
+.rs-field input[type="password"],
+.rs-field input[type="text"] {
+  width: 100%;
+  /* min 52px for comfortable mobile touch */
+  min-height: 52px;
+  padding: 0 16px;
+  font-family: inherit;
+  font-size: 16px; /* 16px prevents iOS auto-zoom */
+  color: #fff;
+  background: #1a1a1a;
+  border: 1px solid #3a3a3a;
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.rs-field input:focus {
+  border-color: #f20d1a;
+  box-shadow: 0 0 0 3px rgba(242, 13, 26, .2);
+}
+
+.rs-field input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Checkbox row */
+.rs-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  /* negative margin-top to tighten from the gap above */
+  margin-top: -4px;
+}
+
+.rs-checkbox-row input[type="checkbox"] {
+  flex-shrink: 0;
+  /* Large enough touch target on mobile */
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  border: 1.5px solid #3a3a3a;
+  background: #1a1a1a;
+  accent-color: #f20d1a;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  position: relative;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.rs-checkbox-row input[type="checkbox"]:checked {
+  background: #f20d1a;
+  border-color: #f20d1a;
+}
+
+.rs-checkbox-row input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 12 10' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 5l3.5 3.5L11 1' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 12px no-repeat;
+}
+
+.rs-checkbox-row input[type="checkbox"]:focus-visible {
+  outline: 2px solid rgba(242, 13, 26, .5);
+  outline-offset: 2px;
+}
+
+.rs-checkbox-row label {
+  font-size: 14px;
+  color: #a3a3a3;
+  cursor: pointer;
+  /* extend tap area */
+  padding: 4px 0;
+}
+
+/* Submit button */
+.rs-login-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 54px;
+  margin-top: 4px;
+  padding: 0 24px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: .01em;
+  color: #fff;
+  background: #f20d1a;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.rs-login-submit:hover:not(:disabled) {
+  background: #d90b17;
+  box-shadow: 0 4px 18px rgba(242, 13, 26, .35);
+}
+
+.rs-login-submit:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+.rs-login-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Spinner */
+.rs-spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255, 255, 255, .35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: rs-spin 0.65s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes rs-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Footer text */
+.rs-login-footer-text {
+  margin-top: 28px;
+  text-align: center;
+  font-size: 14px;
+  color: #7a7a7a;
+}
+
+.rs-login-footer-link {
+  color: #f20d1a;
+  font-weight: 700;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.rs-login-footer-link:hover { color: #ff3d47; }
+
+/* ── Mobile overrides (≤ 480px) ── */
+@media (max-width: 480px) {
+  .rs-login-page {
+    /* align to top on small viewports so keyboard doesn't obscure form */
+    align-items: start;
+    padding-top: 36px;
+  }
+
+  .rs-login-brand { margin-bottom: 36px; }
+
+  .rs-login-panel h1 {
+    font-size: clamp(26px, 9vw, 32px);
+  }
+
+  .rs-login-subtitle {
+    font-size: 15px;
+    margin-bottom: 28px;
+  }
+
+  .rs-login-form { gap: 18px; }
+
+  .rs-login-submit { min-height: 56px; }
+}
+
+/* =============================================
+   CLERK AUTH — RedScroller design system overrides
+   Mobile-first, no horizontal overflow
+   ============================================= */
+.rs-clerk-root,
+.rs-clerk-card-box {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.rs-clerk-card {
+  width: 100%;
+  max-width: 100%;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Hide Clerk's duplicated large header — panel already has branded h1.
+   Keep it accessible for screen readers but visually hidden; show only on
+   sub-flows where Clerk replaces headerSubtitle (e.g. verification). */
+.rs-clerk-header-title {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: #fff !important;
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+  margin-bottom: 6px !important;
+}
+.rs-clerk-header-subtitle {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  color: #a3a3a3 !important;
+  line-height: 1.5;
+}
+
+/* Social (Google) buttons — match .rs-google-btn */
+.rs-clerk-social-buttons {
+  display: flex !important;
+  flex-direction: column;
+  gap: 12px !important;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.rs-clerk-social-button {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 12px !important;
+  width: 100% !important;
+  max-width: 100%;
+  min-height: 52px !important;
+  padding: 0 24px !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: #fff !important;
+  background: #1a1a1a !important;
+  border: 1px solid #3a3a3a !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s !important;
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+}
+.rs-clerk-social-button:hover {
+  background: #222 !important;
+  border-color: #4a4a4a !important;
+}
+.rs-clerk-social-button:active {
+  transform: translateY(1px);
+}
+.rs-clerk-social-button svg,
+.rs-clerk-social-button img {
+  width: 20px !important;
+  height: 20px !important;
+  flex-shrink: 0;
+}
+.rs-clerk-social-button-text {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: #fff !important;
+}
+
+/* Divider — match .rs-login-divider */
+.rs-clerk-divider-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0 !important;
+  margin: 8px 0 !important;
+}
+.rs-clerk-divider-line {
+  flex: 1 !important;
+  height: 1px !important;
+  background: #303030 !important;
+}
+.rs-clerk-divider-text {
+  padding: 0 16px !important;
+  color: #7a7a7a !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .05em !important;
+  background: transparent !important;
+}
+
+/* Form fields */
+.rs-clerk-form-row {
+  gap: 8px !important;
+}
+.rs-clerk-label {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: #e0e0e0 !important;
+  letter-spacing: .01em !important;
+  margin-bottom: 2px !important;
+}
+.rs-clerk-input {
+  width: 100% !important;
+  min-height: 52px !important;
+  padding: 0 16px !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 16px !important; /* 16px prevents iOS auto-zoom */
+  color: #fff !important;
+  background: #1a1a1a !important;
+  border: 1px solid #3a3a3a !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+  outline: none !important;
+  transition: border-color 0.15s, box-shadow 0.15s !important;
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+}
+.rs-clerk-input:focus {
+  border-color: #f20d1a !important;
+  box-shadow: 0 0 0 3px rgba(242, 13, 26, .2) !important;
+}
+.rs-clerk-input::placeholder {
+  color: #858585 !important;
+}
+.rs-clerk-eye-button {
+  color: #a3a3a3 !important;
+}
+.rs-clerk-eye-button:hover {
+  color: #fff !important;
+}
+.rs-clerk-error-text {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 13px !important;
+  color: #ff6b74 !important;
+  line-height: 1.4;
+}
+.rs-clerk-otp-input {
+  min-height: 52px !important;
+  background: #1a1a1a !important;
+  border: 1px solid #3a3a3a !important;
+  border-radius: 10px !important;
+  color: #fff !important;
+  font-size: 16px !important;
+}
+
+/* Primary button — match .rs-login-submit */
+.rs-clerk-primary-button {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  width: 100% !important;
+  min-height: 54px !important;
+  padding: 0 24px !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  letter-spacing: .01em !important;
+  color: #fff !important;
+  background: #f20d1a !important;
+  border: none !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s !important;
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+}
+.rs-clerk-primary-button:hover {
+  background: #d90b17 !important;
+  box-shadow: 0 4px 18px rgba(242, 13, 26, .35) !important;
+}
+.rs-clerk-primary-button:active {
+  transform: translateY(1px);
+  box-shadow: none !important;
+}
+.rs-clerk-primary-button:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+}
+
+/* Footer */
+.rs-clerk-footer,
+.rs-clerk-footer-text {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 14px !important;
+  color: #7a7a7a !important;
+  text-align: center;
+}
+.rs-clerk-footer { margin-top: 8px !important; }
+.rs-clerk-footer-action { gap: 6px !important; justify-content: center !important; }
+.rs-clerk-footer-link {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #f20d1a !important;
+  text-decoration: none !important;
+}
+.rs-clerk-footer-link:hover { color: #ff3d47 !important; }
+
+/* Identity preview (email) */
+.rs-clerk-identity {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 14px !important;
+  color: #e0e0e0 !important;
+}
+
+/* Alerts / errors inside Clerk */
+.rs-clerk-alert {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 10px !important;
+  padding: 14px 16px !important;
+  border-radius: 10px !important;
+  background: rgba(242, 13, 26, .12) !important;
+  border: 1px solid rgba(242, 13, 26, .35) !important;
+  box-sizing: border-box;
+}
+.rs-clerk-alert-text {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 14px !important;
+  color: #ff6b74 !important;
+  line-height: 1.5 !important;
+}
+
+/* Prevent horizontal overflow on small screens */
+.rs-login-panel,
+.rs-clerk-root,
+.rs-clerk-card,
+.rs-clerk-social-buttons,
+.rs-clerk-social-button {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+.rs-login-page {
+  overflow-x: hidden;
+}
+
+/* Extra mobile tweak for Clerk card */
+@media (max-width: 480px) {
+  .rs-clerk-primary-button { min-height: 56px !important; }
+  .rs-clerk-input { min-height: 52px !important; }
 }
 
 /* =============================================

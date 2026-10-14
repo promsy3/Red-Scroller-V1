@@ -1,20 +1,71 @@
 import Link from 'next/link'
-import { createClient } from '@/utils/supabase/server'
-import { fetchApi } from '@/utils/api'
+import { auth } from '@clerk/nextjs/server'
+import { fetchApi, ServiceUnavailableError } from '@/utils/api'
 import { redirect } from 'next/navigation'
 import SidebarClient from './SidebarClient'
 import ThemeToggle from './ThemeToggle'
 import MobileHeader from './MobileHeader'
+import SignOutButton from './SignOutButton'
+
+function ServiceUnavailablePage({ message }: { message: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '20px', textAlign: 'center' }}>
+      <div>
+        <h1 style={{ fontSize: '24px', marginBottom: '16px', color: '#f59e0b' }}>Service Temporarily Unavailable</h1>
+        <p style={{ fontSize: '16px', color: '#6b7280', marginBottom: '24px' }}>
+          {message || 'The database is temporarily unreachable. Please try again.'}
+        </p>
+        <Link
+          href="/dashboard"
+          style={{
+            display: 'inline-block',
+            padding: '12px 24px',
+            backgroundColor: '#6366f1',
+            color: 'white',
+            textDecoration: 'none',
+            borderRadius: '8px',
+            fontSize: '16px',
+          }}
+        >
+          Retry
+        </Link>
+      </div>
+    </div>
+  )
+}
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) redirect('/login')
+  const { userId, getToken } = await auth()
+  if (!userId) redirect('/login')
+  const token = await getToken()
+  if (!token) redirect('/login')
 
-  let user: any = null
+  let user: any
   try {
-    user = await fetchApi('/auth/me', session.access_token)
-  } catch (e) {}
+    user = await fetchApi('/auth/me', token)
+  } catch (error) {
+    // If it's a 503 (service unavailable), show a retry message instead of redirecting
+    if (error instanceof ServiceUnavailableError) {
+      return <ServiceUnavailablePage message={error.message} />
+    }
+    // Do not render a partial dashboard if the identity/firm lookup fails.
+    // fetchApi has a 10s timeout, so this fails visibly instead of hanging.
+    console.error('Unable to load the authenticated user:', error)
+    throw error
+  }
+
+  if (!user?.firmId) redirect('/onboarding')
+
+  let members: any[] = []
+  try {
+    members = await fetchApi('/firms/members', token)
+  } catch (error) {
+    // Membership controls are non-essential to rendering the shell. Keep the
+    // dashboard usable while surfacing the failure in server logs.
+    console.error('Unable to load firm members:', error)
+  }
+
+  const isSolo = members && members.length === 1
 
   return (
     <div className="app-shell">
@@ -43,10 +94,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
           } />
 
-          <div className="sidebar-section-label">Firm</div>
-          <SidebarClient href="/dashboard/team" label="Team" icon={
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-          } />
+          {!isSolo && (
+            <>
+              <div className="sidebar-section-label">Firm</div>
+              <SidebarClient href="/dashboard/team" label="Team" icon={
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+              } />
+            </>
+          )}
           <SidebarClient href="/dashboard/compliance" label="Compliance" icon={
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
           } />
@@ -68,12 +123,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
               <div className="sidebar-user-role">{user?.role} · {user?.firm?.name}</div>
             </div>
           </div>
-          <form action="/auth/signout" method="post" style={{ marginTop: '4px' }}>
-            <button className="sidebar-link" style={{ width: '100%' }}>
-              <svg className="sidebar-link-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-              Sign Out
-            </button>
-          </form>
+          <div style={{ marginTop: '4px' }}>
+            <SignOutButton />
+          </div>
         </div>
       </aside>
 

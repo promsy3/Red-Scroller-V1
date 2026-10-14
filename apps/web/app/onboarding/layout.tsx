@@ -1,4 +1,10 @@
-export default function OnboardingLayout({ children }: { children: React.ReactNode }) {
+import { auth } from '@clerk/nextjs/server'
+import { redirect } from 'next/navigation'
+
+export default async function OnboardingLayout({ children }: { children: React.ReactNode }) {
+  const { userId } = await auth()
+  if (!userId) redirect('/login')
+
   return (
     <main className="rs-onboarding-page">
       <section className="rs-onboarding-panel">

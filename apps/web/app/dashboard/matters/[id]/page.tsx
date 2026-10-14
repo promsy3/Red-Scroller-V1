@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server'
+import { auth } from '@clerk/nextjs/server'
 import { fetchApi } from '@/utils/api'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
@@ -16,17 +16,18 @@ async function getMatterHistory(token: string, matterId: string) {
 }
 
 export default async function MatterDetail({ params }: { params: Promise<{ id: string }> }) {
-  const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) redirect('/login')
+  const { userId, getToken } = await auth()
+  if (!userId) redirect('/login')
+  const token = await getToken()
+  if (!token) redirect('/login')
 
   const { id } = await params
 
   let matter: any = null
   let history: any[] = []
   try {
-    matter = await fetchApi(`/matters/${id}`, session.access_token)
-    history = await getMatterHistory(session.access_token, id)
+    matter = await fetchApi(`/matters/${id}`, token)
+    history = await getMatterHistory(token, id)
   } catch (e) {
     notFound()
   }
@@ -72,9 +73,9 @@ export default async function MatterDetail({ params }: { params: Promise<{ id: s
         </div>
       )}
 
-      <MatterActions matterId={matter.id} currentStatus={matter.status} token={session.access_token} />
+      <MatterActions matterId={matter.id} currentStatus={matter.status} token={token} />
 
-      <ManageAccess matterId={matter.id} isRestricted={matter.isRestricted} initialAccess={matter.matterAccess || []} token={session.access_token} />
+      <ManageAccess matterId={matter.id} isRestricted={matter.isRestricted} initialAccess={matter.matterAccess || []} token={token} />
 
       <div className="rs-documents-section">
         <div className="rs-documents-header">
@@ -82,7 +83,7 @@ export default async function MatterDetail({ params }: { params: Promise<{ id: s
           <span className="rs-documents-count">{matter.documents.length} file{matter.documents.length !== 1 ? 's' : ''}</span>
         </div>
         <div className="rs-documents-upload">
-          <UploadDocumentForm matterId={matter.id} token={session.access_token} />
+          <UploadDocumentForm matterId={matter.id} token={token} />
         </div>
         {matter.documents.length === 0 ? (
           <div className="rs-documents-empty">No documents uploaded yet.</div>
@@ -97,7 +98,7 @@ export default async function MatterDetail({ params }: { params: Promise<{ id: s
                   </p>
                 </div>
                 <div className="rs-document-actions-container">
-                  <DocumentActions doc={doc} token={session.access_token} />
+                  <DocumentActions doc={doc} token={token} />
                   <span className="rs-document-date">{new Date(doc.createdAt).toLocaleDateString()}</span>
                 </div>
               </div>

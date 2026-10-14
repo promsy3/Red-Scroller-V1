@@ -1,37 +1,49 @@
 "use client"
 import { useState, useEffect } from 'react'
-import { createClient } from '@/utils/supabase/client'
+import { useAuth } from '@clerk/nextjs'
 import { fetchApi } from '@/utils/api'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import CreateClientForm from './CreateClientForm'
 
 export default function ClientsPage() {
+  const { getToken } = useAuth()
   const [sessionToken, setSessionToken] = useState<string | null>(null)
   const [clients, setClients] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<'all' | 'corporate' | 'individual'>('all')
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'verified' | 'rejected'>('all')
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 })
 
-  const loadClients = async () => {
+  const loadClients = async (override: { page?: number } = {}) => {
     if (!sessionToken) return
 
     setLoading(true)
+    setError(null)
     try {
       const params = new URLSearchParams()
       if (search) params.append('search', search)
       if (typeFilter !== 'all') params.append('type', typeFilter)
       if (statusFilter !== 'all') params.append('verificationStatus', statusFilter)
-      params.append('page', pagination.page.toString())
+      const page = typeof override.page === 'number' ? override.page : pagination.page
+      params.append('page', page.toString())
       params.append('limit', pagination.limit.toString())
 
       const response = await fetchApi(`/clients?${params.toString()}`, sessionToken)
-      setClients(response.data || [])
-      setPagination(response.meta || pagination)
-    } catch (e) {
-      console.error(e)
+      const nextClients = Array.isArray(response?.data) ? response.data : []
+      const nextMeta = response?.meta || pagination
+      setClients(nextClients)
+      setPagination({
+        page: Number(nextMeta.page ?? page),
+        limit: Number(nextMeta.limit ?? pagination.limit),
+        total: Number(nextMeta.total ?? 0),
+        totalPages: Number(nextMeta.totalPages ?? 0),
+      })
+    } catch (e: any) {
+      setError(e?.message || 'Unable to load clients. Please refresh and try again.')
+      setClients([])
     } finally {
       setLoading(false)
     }
@@ -39,31 +51,37 @@ export default function ClientsPage() {
 
   useEffect(() => {
     const init = async () => {
-      const supabase = createClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
+      const token = await getToken()
+      if (!token) {
         redirect('/login')
         return
       }
-      setSessionToken(session.access_token)
+      setSessionToken(token)
     }
     init()
   }, [])
 
   useEffect(() => {
-    if (sessionToken) {
-      setPagination(prev => ({ ...prev, page: 1 }))
-      loadClients()
-    }
+    if (!sessionToken) return
+    setPagination(prev => ({ ...prev, page: 1 }))
+    loadClients({ page: 1 })
+  }, [sessionToken])
+
+  useEffect(() => {
+    if (!sessionToken) return
+    const page = 1
+    setPagination(prev => ({ ...prev, page }))
+    loadClients({ page })
   }, [search, typeFilter, statusFilter])
 
   useEffect(() => {
-    if (sessionToken) {
-      loadClients()
-    }
+    if (!sessionToken) return
+    loadClients({ page: pagination.page })
   }, [pagination.page])
 
   const handlePageChange = (newPage: number) => {
+    if (loading) return
+    if (newPage < 1 || (pagination.totalPages > 0 && newPage > pagination.totalPages)) return
     setPagination(prev => ({ ...prev, page: newPage }))
   }
 
@@ -71,7 +89,7 @@ export default function ClientsPage() {
     <div className="rs-clients-page">
       <div className="rs-clients-header">
         <h2>Clients</h2>
-        <CreateClientForm token={sessionToken || ''} />
+        <CreateClientForm token={sessionToken || ''} onCreated={() => loadClients({ page: 1 })} />
       </div>
 
       <div className="rs-clients-filters">
@@ -103,6 +121,8 @@ export default function ClientsPage() {
         </select>
       </div>
 
+      {error && <div className="rs-form-error" style={{ margin: '12px 0' }}>{error}</div>}
+
       <div className="rs-clients-table-container">
         {loading ? (
           <div className="rs-loading">
@@ -110,10 +130,13 @@ export default function ClientsPage() {
             <p>Loading clients...</p>
           </div>
         ) : clients.length === 0 ? (
-          <div className="rs-clients-empty">No clients found. Adjust your filters or add your first client above.</div>
+          <div className="rs-clients-empty">
+            {search || typeFilter !== 'all' || statusFilter !== 'all'
+              ? 'No clients match your filters. Try clearing search/filters.'
+              : 'No clients yet. Add your first client using the button above.'}
+          </div>
         ) : (
           <>
-            {/* Desktop Table View */}
             <table className="rs-clients-table">
               <thead>
                 <tr>
@@ -134,7 +157,7 @@ export default function ClientsPage() {
                         {client.verificationStatus}
                       </span>
                     </td>
-                    <td className="rs-clients-date">{new Date(client.createdAt).toLocaleDateString()}</td>
+                    <td className="rs-clients-date">{client.createdAt ? new Date(client.createdAt).toLocaleDateString() : '—'}</td>
                     <td className="rs-clients-action">
                       <Link href={`/dashboard/clients/${client.id}`} className="rs-clients-link">
                         View →
@@ -145,7 +168,6 @@ export default function ClientsPage() {
               </tbody>
             </table>
 
-            {/* Mobile Card View */}
             <div className="rs-clients-mobile-list">
               {clients.map((client: any) => (
                 <div key={client.id} className="rs-client-mobile-card">
@@ -160,7 +182,7 @@ export default function ClientsPage() {
                   </div>
                   <div className="rs-mobile-card-meta">
                     <div className="rs-mobile-card-meta-item">
-                      Added: {new Date(client.createdAt).toLocaleDateString()}
+                      Added: {client.createdAt ? new Date(client.createdAt).toLocaleDateString() : '—'}
                     </div>
                   </div>
                   <div className="rs-mobile-card-action">
@@ -172,12 +194,11 @@ export default function ClientsPage() {
               ))}
             </div>
 
-            {/* Pagination */}
             {pagination.totalPages > 1 && (
               <div className="rs-pagination">
                 <button
                   onClick={() => handlePageChange(pagination.page - 1)}
-                  disabled={pagination.page === 1}
+                  disabled={pagination.page === 1 || loading}
                   className="rs-button rs-button-secondary rs-button-sm"
                 >
                   Previous
@@ -187,7 +208,7 @@ export default function ClientsPage() {
                 </span>
                 <button
                   onClick={() => handlePageChange(pagination.page + 1)}
-                  disabled={pagination.page === pagination.totalPages}
+                  disabled={pagination.totalPages > 0 && pagination.page === pagination.totalPages || loading}
                   className="rs-button rs-button-secondary rs-button-sm"
                 >
                   Next

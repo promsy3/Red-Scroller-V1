@@ -1,15 +1,16 @@
 "use server"
-import { createClient } from '@/utils/supabase/server'
+import { auth } from '@clerk/nextjs/server'
 import { fetchApi } from '@/utils/api'
 import { revalidatePath } from 'next/cache'
 
 export async function approveRequestAction(requestId: string) {
-  const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return { error: 'Not authenticated' }
+  const { userId, getToken } = await auth()
+  if (!userId) return { error: 'Not authenticated' }
+  const token = await getToken()
+  if (!token) return { error: 'Not authenticated' }
 
   try {
-    await fetchApi(`/firms/requests/${requestId}/approve`, session.access_token, {
+    await fetchApi(`/firms/requests/${requestId}/approve`, token, {
       method: 'POST'
     });
     revalidatePath('/dashboard/team')
@@ -20,12 +21,13 @@ export async function approveRequestAction(requestId: string) {
 }
 
 export async function declineRequestAction(requestId: string) {
-  const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return { error: 'Not authenticated' }
+  const { userId, getToken } = await auth()
+  if (!userId) return { error: 'Not authenticated' }
+  const token = await getToken()
+  if (!token) return { error: 'Not authenticated' }
 
   try {
-    await fetchApi(`/firms/requests/${requestId}/decline`, session.access_token, {
+    await fetchApi(`/firms/requests/${requestId}/decline`, token, {
       method: 'POST'
     });
     revalidatePath('/dashboard/team')
@@ -36,12 +38,13 @@ export async function declineRequestAction(requestId: string) {
 }
 
 export async function removeMemberAction(firmId: string, userId: string) {
-  const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return { error: 'Not authenticated' }
+  const { userId: actorId, getToken } = await auth()
+  if (!actorId) return { error: 'Not authenticated' }
+  const token = await getToken()
+  if (!token) return { error: 'Not authenticated' }
 
   try {
-    await fetchApi(`/firms/${firmId}/members/${userId}`, session.access_token, {
+    await fetchApi(`/firms/${firmId}/members/${userId}`, token, {
       method: 'DELETE'
     });
     revalidatePath('/dashboard/team')

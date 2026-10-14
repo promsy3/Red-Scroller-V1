@@ -1,19 +1,20 @@
-import { createClient } from '@/utils/supabase/server'
+import { auth } from '@clerk/nextjs/server'
 import { fetchApi } from '@/utils/api'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import CreateMatterForm from './CreateMatterForm'
 
 export default async function MattersPage() {
-  const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) redirect('/login')
+  const { userId, getToken } = await auth()
+  if (!userId) redirect('/login')
+  const token = await getToken()
+  if (!token) redirect('/login')
 
   let matters: any[] = []
   let clients: any[] = []
   try {
-    matters = await fetchApi('/matters', session.access_token)
-    clients = await fetchApi('/clients/list', session.access_token)
+    matters = await fetchApi('/matters', token)
+    clients = await fetchApi('/clients/list', token)
   } catch (e) {
     console.error(e)
   }
@@ -22,7 +23,7 @@ export default async function MattersPage() {
     <div className="rs-matters-page">
       <div className="rs-matters-header">
         <h2>Matters</h2>
-        <CreateMatterForm token={session.access_token} clients={clients} />
+        <CreateMatterForm token={token} clients={clients} />
       </div>
 
       <div className="rs-matters-table-container">
