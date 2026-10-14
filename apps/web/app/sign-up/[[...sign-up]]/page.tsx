@@ -44,9 +44,10 @@ export default function SignUpPage() {
         <p className="rs-login-subtitle">Join RedScroller to manage your legal matters efficiently.</p>
 
         <SignUp
-          routing="hash"
-          forceRedirectUrl="/"
+          routing="path"
+          path="/sign-up"
           signInUrl="/login"
+          forceRedirectUrl="/dashboard"
           appearance={clerkAppearance}
         />
       </section>
