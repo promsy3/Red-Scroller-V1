@@ -4,6 +4,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { AuditAction, AuditEntityType } from '@prisma/client';
 import { EmailService } from '../email/email.service';
+import { CreateMatterDto } from './create-matter.dto';
+import { UpdateMatterDto } from './update-matter.dto';
 
 @Controller('matters')
 @UseGuards(ClerkAuthGuard)
@@ -116,30 +118,30 @@ export class MattersController {
   @Post()
   async createMatter(
     @Request() req,
-    @Body() body: { title: string; clientId: string; description?: string; assignedTo?: string; isRestricted?: boolean; type?: 'active' | 'pending' | 'closed' },
+    @Body() createMatterDto: CreateMatterDto,
   ) {
     const user = await this.requireFirm(req.user.sub, req.user.firmId);
-    const client = await this.prisma.client.findFirst({ where: { id: body.clientId, firmId: user.firmId } });
+    const client = await this.prisma.client.findFirst({ where: { id: createMatterDto.clientId, firmId: user.firmId } });
     if (!client) throw new NotFoundException('Client not found');
 
     let assignedTo = user.id;
-    if (body.assignedTo && body.assignedTo !== user.id) {
+    if (createMatterDto.assignedTo && createMatterDto.assignedTo !== user.id) {
       const assignee = await this.prisma.user.findFirst({
-        where: { id: body.assignedTo, firmId: user.firmId, role: { in: ['admin', 'lawyer'] }, status: 'active' },
+        where: { id: createMatterDto.assignedTo, firmId: user.firmId, role: { in: ['admin', 'lawyer'] }, status: 'active' },
       });
       if (!assignee) throw new ForbiddenException('Assignee must be an active admin or lawyer in your Firm');
-      assignedTo = body.assignedTo;
+      assignedTo = createMatterDto.assignedTo;
     }
 
     const matter = await this.prisma.matter.create({
       data: {
         firmId: user.firmId,
-        clientId: body.clientId,
-        title: body.title,
-        description: body.description,
-        status: body.type || 'pending',
+        clientId: createMatterDto.clientId,
+        title: createMatterDto.title,
+        description: createMatterDto.description,
+        status: createMatterDto.type || 'pending',
         assignedTo,
-        isRestricted: !!body.isRestricted,
+        isRestricted: !!createMatterDto.isRestricted,
       },
       include: { client: true, assignee: {
           select: {
@@ -198,15 +200,15 @@ export class MattersController {
   async updateMatter(
     @Request() req,
     @Param('id') id: string,
-    @Body() body: { title?: string; description?: string; status?: 'active' | 'pending' | 'closed'; assignedTo?: string; isRestricted?: boolean },
+    @Body() updateMatterDto: UpdateMatterDto,
   ) {
     const user = await this.requireFirm(req.user.sub, req.user.firmId);
     const matter = await this.getMatter(req, id); // Will run ethical walls check
 
-    const updateData: any = { ...body };
-    if (body.assignedTo) {
+    const updateData: any = { ...updateMatterDto };
+    if (updateMatterDto.assignedTo) {
       const assignee = await this.prisma.user.findFirst({
-        where: { id: body.assignedTo, firmId: user.firmId, role: { in: ['admin', 'lawyer'] }, status: 'active' },
+        where: { id: updateMatterDto.assignedTo, firmId: user.firmId, role: { in: ['admin', 'lawyer'] }, status: 'active' },
       });
       if (!assignee) throw new ForbiddenException('Assignee must be an active admin or lawyer in your Firm');
     }
@@ -225,7 +227,7 @@ export class MattersController {
         } },
     });
 
-    await this.audit.log(user.firmId, user.id, AuditAction.UPDATE, AuditEntityType.MATTER, id, { fields_changed: Object.keys(body) });
+    await this.audit.log(user.firmId, user.id, AuditAction.UPDATE, AuditEntityType.MATTER, id, { fields_changed: Object.keys(updateMatterDto) });
     return updated;
   }
 

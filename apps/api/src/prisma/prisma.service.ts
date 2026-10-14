@@ -2,8 +2,10 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { AsyncLocalStorage } from 'async_hooks';
 
-@Injectable()
+export const rlsContext = new AsyncLocalStorage<{ firmId: string }>();
+
 export class PrismaService extends PrismaClient implements OnModuleInit {
   private pool: Pool;
 
@@ -18,10 +20,26 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
   async onModuleInit() {
     await this.$connect();
   }
+}
 
-  async setFirmId(firmId: string): Promise<void> {
-    // SET LOCAL doesn't support parameterized queries, so we need to escape the firmId
-    // Since firmId is a UUID, it's safe to interpolate directly
-    await this.pool.query(`SET LOCAL app.current_firm_id = '${firmId}'`);
-  }
+export function createPrismaService() {
+  const service = new PrismaService();
+  return service.$extends({
+    query: {
+      $allModels: {
+        async $allOperations({ args, query }) {
+          const store = rlsContext.getStore();
+          if (store?.firmId) {
+            const [, , result] = await service.$transaction([
+              service.$executeRaw`SET LOCAL role = 'authenticated'`,
+              service.$executeRaw`SELECT set_config('app.current_firm_id', ${store.firmId}, TRUE)`,
+              query(args),
+            ]);
+            return result;
+          }
+          return query(args);
+        }
+      }
+    }
+  }) as unknown as PrismaService;
 }

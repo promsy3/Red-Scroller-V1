@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Patch, Body, Param, UseGuards, Request, NotFoundException, ForbiddenException, Query } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, Request, NotFoundException, ForbiddenException, Query, ConflictException } from '@nestjs/common';
 import { ClerkAuthGuard } from '../auth/clerk.guard';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { AuditAction, AuditEntityType } from '@prisma/client';
+import { CreateClientDto } from './create-client.dto';
 
 @Controller('clients')
 @UseGuards(ClerkAuthGuard)
@@ -23,14 +24,14 @@ export class ClientsController {
   // Simple Levenshtein distance for fuzzy matching
   private levenshteinDistance(a: string, b: string): number {
     const matrix: number[][] = Array(b.length + 1).fill(0).map(() => Array(a.length + 1).fill(0));
-    
+
     for (let i = 0; i <= a.length; i++) {
       matrix[0][i] = i;
     }
     for (let j = 0; j <= b.length; j++) {
       matrix[j][0] = j;
     }
-    
+
     for (let j = 1; j <= b.length; j++) {
       for (let i = 1; i <= a.length; i++) {
         const cost = a[i - 1] === b[j - 1] ? 0 : 1;
@@ -63,21 +64,21 @@ export class ClientsController {
     @Query('limit') limit?: string
   ) {
     const user = await this.requireFirm(req.user.sub, req.user.firmId);
-    
+
     const pageNum = Math.max(1, parseInt(page || '1'));
     const limitNum = Math.min(100, Math.max(1, parseInt(limit || '20')));
     const skip = (pageNum - 1) * limitNum;
 
     const where: any = { firmId: user.firmId };
-    
+
     if (search && search.length >= 2) {
       where.name = { contains: search, mode: 'insensitive' };
     }
-    
+
     if (type) {
       where.type = type;
     }
-    
+
     if (verificationStatus) {
       where.verificationStatus = verificationStatus;
     }
@@ -122,7 +123,7 @@ export class ClientsController {
       where: { firmId: user.firmId, name: { contains: q, mode: 'insensitive' } },
       take: 5
     });
-    
+
     const matters = await this.prisma.matter.findMany({
       where: { firmId: user.firmId, title: { contains: q, mode: 'insensitive' } },
       take: 5
@@ -157,17 +158,17 @@ export class ClientsController {
   }
 
   @Post()
-  async createClient(@Request() req, @Body() body: { name: string; type: 'corporate' | 'individual' }) {
+  async createClient(@Request() req, @Body() createClientDto: CreateClientDto) {
     const user = await this.requireFirm(req.user.sub, req.user.firmId);
     const client = await this.prisma.client.create({
-      data: { 
-        firmId: user.firmId, 
-        name: body.name, 
-        type: body.type,
+      data: {
+        firmId: user.firmId,
+        name: createClientDto.name,
+        type: createClientDto.type,
         verificationStatus: 'pending'
       },
     });
-    
+
     await this.audit.log(user.firmId, user.id, AuditAction.CREATE, AuditEntityType.CLIENT, client.id, { name: client.name, type: client.type });
     return client;
   }
@@ -188,9 +189,41 @@ export class ClientsController {
     const user = await this.requireFirm(req.user.sub, req.user.firmId);
     const existing = await this.prisma.client.findFirst({ where: { id, firmId: user.firmId } });
     if (!existing) throw new NotFoundException('Client not found');
-    
+
     const client = await this.prisma.client.update({ where: { id }, data: body });
     await this.audit.log(user.firmId, user.id, AuditAction.UPDATE, AuditEntityType.CLIENT, id, { fields_changed: Object.keys(body) });
     return client;
+  }
+
+  @Delete(':id')
+  async deleteClient(@Request() req, @Param('id') id: string) {
+    const user = await this.requireFirm(req.user.sub, req.user.firmId);
+    const client = await this.prisma.client.findFirst({
+      where: { id, firmId: user.firmId },
+      include: { matters: { select: { id: true, title: true } } },
+    });
+    if (!client) throw new NotFoundException('Client not found');
+
+    if (client.matters && client.matters.length > 0) {
+      await this.audit.log(user.firmId, user.id, AuditAction.DELETE, AuditEntityType.CLIENT, id, {
+        name: client.name,
+        blocked: true,
+        blockedReason: 'has_matters',
+        mattersCount: client.matters.length,
+      });
+      throw new ConflictException({
+        message: 'This client has linked matters and cannot be deleted.',
+        blockedReason: 'has_matters',
+        mattersCount: client.matters.length,
+      });
+    }
+
+    await this.prisma.client.delete({ where: { id } });
+    await this.audit.log(user.firmId, user.id, AuditAction.DELETE, AuditEntityType.CLIENT, id, {
+      name: client.name,
+      blocked: false,
+    });
+
+    return { message: 'Client deleted', clientId: id };
   }
 }

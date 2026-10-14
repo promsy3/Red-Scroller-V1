@@ -1,9 +1,11 @@
 import { Controller, Get, Post, Body, UseGuards, Request, Param, ForbiddenException, NotFoundException, BadRequestException, Delete } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { ClerkAuthGuard } from '../auth/clerk.guard';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { AuditAction, AuditEntityType } from '@prisma/client';
 import { EmailService } from '../email/email.service';
+import { CreateFirmDto } from './create-firm.dto';
 
 @Controller('firms')
 @UseGuards(ClerkAuthGuard)
@@ -25,21 +27,14 @@ export class FirmsController {
     return user as typeof user & { firmId: string };
   }
 
-  @Get()
-  async getFirms() {
-    return this.prisma.firm.findMany({
-      select: { id: true, name: true, status: true },
-    });
-  }
-
   @Post()
-  async createFirm(@Request() req, @Body() body: { name: string }) {
+  async createFirm(@Request() req, @Body() createFirmDto: CreateFirmDto) {
     const userId = req.user.sub;
     
     // Create the firm and update the user to be admin of this firm
     const firm = await this.prisma.firm.create({
       data: {
-        name: body.name,
+        name: createFirmDto.name,
       },
     });
 
@@ -314,12 +309,7 @@ export class FirmsController {
   }
 
   private generateInviteToken(): string {
-    // Generate a secure random token
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let token = '';
-    for (let i = 0; i < 32; i++) {
-      token += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return token;
+    // Generate a cryptographically secure random token
+    return randomUUID();
   }
 }
