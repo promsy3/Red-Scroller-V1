@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3000",
+   "dev": "next dev --port 3000",
     "build": "next build",
     "start": "next start",
     "lint": "eslint --max-warnings 0",
@@ -13,9 +13,7 @@
   "dependencies": {
     "@clerk/nextjs": "^7.6.5",
     "@repo/ui": "*",
-    "@supabase/auth-ui-react": "^0.4.7",
-    "@supabase/auth-ui-shared": "^0.1.8",
-    "@supabase/ssr": "^0.12.4",
+    "@sentry/nextjs": "^10.73.0",
     "@supabase/supabase-js": "^2.112.0",
     "next": "16.2.0",
     "react": "^19.2.0",
