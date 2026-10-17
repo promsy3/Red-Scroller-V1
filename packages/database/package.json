@@ -14,6 +14,7 @@
     "@prisma/client": "^7.9.1"
   },
   "devDependencies": {
+    "pg-embedded": "^0.2.3",
     "prisma": "^7.9.1"
   }
 }
