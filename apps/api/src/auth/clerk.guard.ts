@@ -3,6 +3,7 @@ import { CanActivate, ExecutionContext, Injectable, Logger, UnauthorizedExceptio
 import { verifyToken } from '@clerk/backend';
 import { PrismaService } from '../prisma/prisma.service';
 import { createClerkClient } from '@clerk/clerk-sdk-node';
+import { User } from '@prisma/client';
 
 // Helper to detect database/connection errors
 function isDatabaseError(error: unknown): boolean {
@@ -94,7 +95,7 @@ export class ClerkAuthGuard implements CanActivate {
       this.logger.log(`Clerk token verified. clerkId=${clerkUserId}`);
 
       // Retry user lookup for transient database errors (max 2 attempts)
-      let user = null;
+      let user: User | null = null;
       let dbRetryCount = 0;
       const maxDbRetries = 2;
 
@@ -187,9 +188,10 @@ export class ClerkAuthGuard implements CanActivate {
         // Update user if name has changed
         if (fullName && user.name !== fullName) {
           this.logger.log(`Updating user name from "${user.name}" to "${fullName}"`);
+          const userId = user.id;
           user = await withDbRetry(
             () => this.prisma.user.update({
-              where: { id: user.id },
+              where: { id: userId },
               data: { name: fullName },
             }),
             this.logger,
@@ -204,8 +206,9 @@ export class ClerkAuthGuard implements CanActivate {
       // Users with a firmId must have a valid firm relationship
       if (user.firmId) {
         // Verify the firm exists (basic sanity check)
+        const firmId = user.firmId;
         const firm = await withDbRetry(
-          () => this.prisma.firm.findUnique({ where: { id: user.firmId } }),
+          () => this.prisma.firm.findUnique({ where: { id: firmId } }),
           this.logger,
           'Firm lookup'
         );
