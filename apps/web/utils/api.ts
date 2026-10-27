@@ -1,4 +1,4 @@
-import { getFreshClientToken } from '@/utils/auth-token'
+import { getFreshClientToken } from './auth-token'
 
 // Custom error class for service unavailability (503)
 export class ServiceUnavailableError extends Error {
@@ -8,20 +8,47 @@ export class ServiceUnavailableError extends Error {
   }
 }
 
-export async function fetchApi(endpoint: string, token: string, options: RequestInit = {}) {
+// Waking state for cold starts
+export interface FetchApiOptions extends RequestInit {
+  onWaking?: () => void;
+}
+
+// How long to wait before telling the user the demo is waking up. The
+// request keeps running; this only flips the UI into the "waking" state.
+export const WAKING_DELAY_MS = 5_000;
+// Hard timeout for a single API request (covers a full cold start).
+export const REQUEST_TIMEOUT_MS = 60_000;
+
+export const WAKING_MESSAGE =
+  'Waking up the demo, this can take up to a minute on first load. Please wait...';
+export const TIMEOUT_MESSAGE =
+  'The demo did not respond within 60 seconds. The server may still be waking up - please refresh the page and try again.';
+
+export async function fetchApi(endpoint: string, token: string, options: FetchApiOptions = {}) {
   const url = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}${endpoint}`;
 
   const makeRequest = async (authToken: string): Promise<Response> => {
-    return fetch(url, {
-      ...options,
-      cache: 'no-store',
-      signal: options.signal ?? AbortSignal.timeout(10_000),
-      headers: {
-        ...options.headers,
-        Authorization: `Bearer ${authToken}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    // Use AbortController + setTimeout (instead of AbortSignal.timeout) so the
+    // 60s deadline is driven by the same timer machinery as the 5s waking
+    // delay, and so tests can control it deterministically.
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort(new DOMException('The request timed out.', 'TimeoutError'));
+    }, REQUEST_TIMEOUT_MS);
+    try {
+      return await fetch(url, {
+        ...options,
+        cache: 'no-store',
+        signal: options.signal ?? controller.signal,
+        headers: {
+          ...options.headers,
+          Authorization: `Bearer ${authToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
   };
 
   let response: Response;
@@ -35,14 +62,27 @@ export async function fetchApi(endpoint: string, token: string, options: Request
     authorizationToken = token;
   }
 
+  // Set up the "waking up" timer (5 seconds). This runs for both client and
+  // server environments: on the client the callback flips component state,
+  // on the server it lets callers (or the loading.tsx fallback) observe it.
+  let wakingTimer: NodeJS.Timeout | null = null;
+  if (options.onWaking) {
+    wakingTimer = setTimeout(() => {
+      options.onWaking!();
+    }, WAKING_DELAY_MS);
+  }
+
   try {
     response = await makeRequest(authorizationToken);
   } catch (error) {
-    const message = error instanceof Error && error.name === 'TimeoutError'
-      ? 'The backend API did not respond within 10 seconds.'
+    if (wakingTimer) clearTimeout(wakingTimer);
+    const message = error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')
+      ? TIMEOUT_MESSAGE
       : 'Unable to reach the backend API.';
     throw new Error(message, { cause: error });
   }
+
+  if (wakingTimer) clearTimeout(wakingTimer);
 
   // If we get a 401 (unauthorized), try once more with a fresh token
   // This handles the edge case where a token expires between being fetched and used

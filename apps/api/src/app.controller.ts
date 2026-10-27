@@ -6,4 +6,9 @@ export class AppController {
   getHello(): string {
     return 'Hello World!';
   }
+
+  @Get('health')
+  health(): { status: string } {
+    return { status: 'ok' };
+  }
 }

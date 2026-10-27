@@ -1,11 +1,11 @@
 import { auth } from '@clerk/nextjs/server'
-import { fetchApi, ServiceUnavailableError } from '@/utils/api'
+import { fetchApi, ServiceUnavailableError, FetchApiOptions } from '@/utils/api'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import UpcomingEventsList from './UpcomingEventsList'
 
-async function safeFetch(path: string, token: string) {
-  try { return await fetchApi(path, token) } catch { return [] }
+async function safeFetch(path: string, token: string, options?: FetchApiOptions) {
+  try { return await fetchApi(path, token, options) } catch { return [] }
 }
 
 function ServiceUnavailablePage({ message }: { message: string }) {

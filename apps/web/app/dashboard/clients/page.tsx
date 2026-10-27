@@ -5,12 +5,14 @@ import { fetchApi } from '@/utils/api'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import CreateClientForm from './CreateClientForm'
+import WakingNotice from '../WakingNotice'
 
 export default function ClientsPage() {
   const { getToken } = useAuth()
   const [sessionToken, setSessionToken] = useState<string | null>(null)
   const [clients, setClients] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [waking, setWaking] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<'all' | 'corporate' | 'individual'>('all')
@@ -22,6 +24,7 @@ export default function ClientsPage() {
 
     setLoading(true)
     setError(null)
+    setWaking(false)
     try {
       const params = new URLSearchParams()
       if (search) params.append('search', search)
@@ -31,7 +34,9 @@ export default function ClientsPage() {
       params.append('page', page.toString())
       params.append('limit', pagination.limit.toString())
 
-      const response = await fetchApi(`/clients?${params.toString()}`, sessionToken)
+      const response = await fetchApi(`/clients?${params.toString()}`, sessionToken, {
+        onWaking: () => setWaking(true),
+      })
       const nextClients = Array.isArray(response?.data) ? response.data : []
       const nextMeta = response?.meta || pagination
       setClients(nextClients)
@@ -46,6 +51,7 @@ export default function ClientsPage() {
       setClients([])
     } finally {
       setLoading(false)
+      setWaking(false)
     }
   }
 
@@ -127,7 +133,11 @@ export default function ClientsPage() {
         {loading ? (
           <div className="rs-loading">
             <div className="rs-spinner"></div>
-            <p>Loading clients...</p>
+            {waking ? (
+              <WakingNotice />
+            ) : (
+              <p>Loading clients...</p>
+            )}
           </div>
         ) : clients.length === 0 ? (
           <div className="rs-clients-empty">

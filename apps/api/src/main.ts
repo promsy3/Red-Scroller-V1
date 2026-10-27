@@ -7,25 +7,18 @@ import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const rawOrigins = (process.env.WEB_URL || 'http://localhost:3000').split(',');
-  const allowedOrigins = rawOrigins
-    .map(o => o.trim().replace(/\/$/, ''))
-    .filter(Boolean);
-  // Always allow localhost:3000 as fallback for local dev (handles WEB_URL missing or misconfigured)
-  if (!allowedOrigins.includes('http://localhost:3000')) {
-    allowedOrigins.push('http://localhost:3000');
-  }
-  console.log(`[CORS] Allowed origins: ${allowedOrigins.join(', ')}`);
+  const allowedOrigin = (process.env.WEB_URL || 'http://localhost:3000').trim().replace(/\/$/, '');
+  console.log(`[CORS] Allowed origin: ${allowedOrigin}`);
   app.enableCors({
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps or curl requests, and server-side fetches)
       if (!origin) return callback(null, true);
       const normalizedOrigin = origin.trim().replace(/\/$/, '');
-      if (allowedOrigins.includes(normalizedOrigin)) {
+      if (normalizedOrigin === allowedOrigin) {
         callback(null, true);
       } else {
-        console.warn(`[CORS] Blocked origin: ${origin} (normalized: ${normalizedOrigin}), allowed: ${allowedOrigins.join(', ')}`);
-        callback(new Error('Not allowed by CORS'));
+        console.warn(`[CORS] Blocked origin: ${origin} (normalized: ${normalizedOrigin}), allowed: ${allowedOrigin}`);
+        callback(null, false); // Return false to block CORS headers without 500 error
       }
     },
     credentials: true,
@@ -36,6 +29,6 @@ async function bootstrap() {
     transform: true,
     transformOptions: { enableImplicitConversion: true },
   }));
-  await app.listen(process.env.PORT ?? 3001);
+  await app.listen(process.env.PORT ?? 3001, '0.0.0.0');
 }
 bootstrap();
